@@ -463,15 +463,20 @@ private:
                           void *user)
     {
         ALOGV("%s", __FUNCTION__);
-        CameraHardwareInterface *__this =
-                static_cast<CameraHardwareInterface *>(user);
-        sp<CameraHeapMemory> mem(static_cast<CameraHeapMemory *>(data->handle));
-        if (index >= mem->mNumBufs) {
-            ALOGE("%s: invalid buffer index %d, max allowed is %d", __FUNCTION__,
-                 index, mem->mNumBufs);
+		CameraHardwareInterface *__this =
+        static_cast<CameraHardwareInterface *>(user);
+		if(data){
+        	sp<CameraHeapMemory> mem(static_cast<CameraHeapMemory *>(data->handle));
+        	if (index >= mem->mNumBufs) {
+            	ALOGE("%s: invalid buffer index %d, max allowed is %d", __FUNCTION__,
+                 	index, mem->mNumBufs);
             return;
-        }
-        __this->mDataCb(msg_type, mem->mBuffers[index], metadata, __this->mCbUser);
+        	}
+        	__this->mDataCb(msg_type, mem->mBuffers[index], metadata, __this->mCbUser);
+		}else if(metadata){
+			
+			__this->mDataCb(msg_type, NULL, metadata, __this->mCbUser);
+		}
     }
 
     static void __data_cb_timestamp(nsecs_t timestamp, int32_t msg_type,
