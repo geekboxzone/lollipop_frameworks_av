@@ -116,8 +116,11 @@ Input
 #include "s_tmp3dec_file.h"
 #include "pvmp3_getbits.h"
 #include "mp3_mem_funcs.h"
+#include "frame.h"
+#include "synth.h"
+#include "utils/Log.h"
 
-
+//#define LOG_TAG "PVMP3_FRAMEDECODER"
 /*----------------------------------------------------------------------------
 ; MACROS
 ; Define module specific macros here
@@ -153,6 +156,10 @@ Input
 /*----------------------------------------------------------------------------
 ; FUNCTION CODE
 ----------------------------------------------------------------------------*/
+#define LAYER1
+#ifdef MP3_DEBUG
+FILE * fp = NULL;
+#endif
 
 ERROR_CODE pvmp3_framedecoder(tPVMP3DecoderExternal *pExt,
                               void              *pMem)
@@ -184,6 +191,8 @@ ERROR_CODE pvmp3_framedecoder(tPVMP3DecoderExternal *pExt,
     if (errorCode != NO_DECODING_ERROR)
     {
         pExt->outputFrameSize = 0;
+		pExt->inputBufferUsedLength = pVars->inputStream.usedBits >>3;
+		ALOGV("errorCode1 = %d len = %d",(int32)errorCode,pExt->inputBufferCurrentLength);
         return errorCode;
     }
 
@@ -210,7 +219,9 @@ ERROR_CODE pvmp3_framedecoder(tPVMP3DecoderExternal *pExt,
         return OUTPUT_BUFFER_TOO_SMALL;
     }
 
-
+	pExt->version = info->version_x;
+    pExt->samplingRate = mp3_s_freq[info->version_x][info->sampling_frequency];
+    pExt->bitRate = mp3_bitrate[pExt->version][info->bitrate_index];
     pChVars[ LEFT] = &pVars->perChan[ LEFT];
     pChVars[RIGHT] = &pVars->perChan[RIGHT];
 
@@ -247,6 +258,7 @@ ERROR_CODE pvmp3_framedecoder(tPVMP3DecoderExternal *pExt,
         if (errorCode != NO_DECODING_ERROR)
         {
             pExt->outputFrameSize = 0;
+			pExt->inputBufferUsedLength = pVars->inputStream.usedBits >> 3;
             return errorCode;
         }
 
@@ -521,20 +533,52 @@ ERROR_CODE pvmp3_framedecoder(tPVMP3DecoderExternal *pExt,
     }
     else
     {
-        /*
-         * The info on the header leads to an unsupported layer, more data
-         * will not fix this, so this is a bad frame,
-         */
+		uint32 headerLen = (info->error_protection)?6:4;
+		uint32 offset = (pVars->inputStream.usedBits >> 3) - headerLen;
+		pExt->synth.pcm.pOutput = pExt->pOutputBuffer;
 
-        pExt->outputFrameSize = 0;
-        return UNSUPPORTED_LAYER;
+		pExt->stream.this_frame = pExt->pInputBuffer + offset;
+		if(mad_frame_decode(&pExt->frame, &pExt->stream))
+		{
+			ALOGE("mp3 offset =%d headerLen =%d",offset,headerLen);
+			pExt->inputBufferUsedLength = pVars->inputStream.usedBits >> 3;
+        	return UNSUPPORTED_LAYER;
+		}
+		if((pExt->inputBufferCurrentLength - offset) < pExt->stream.skiplen)
+		{
+			ALOGE("the data not enough len = %d need len = %d",pExt->inputBufferCurrentLength- offset, pExt->stream.skiplen);
+			pExt->inputBufferUsedLength = pVars->inputStream.usedBits >> 3;
+			return NO_ENOUGH_MAIN_DATA_ERROR;//not enough data
+		}
+		mad_synth_frame(&pExt->synth, &pExt->frame);
+		output(&pExt->frame.header, &pExt->synth.pcm);
+		pExt->inputBufferUsedLength = pExt->stream.skiplen + offset;
+		pExt->outputFrameSize = pExt->synth.pcm.length * pExt->num_channels;
+		pExt->totalNumberOfBitsUsed += (pExt->stream.skiplen  + offset)<<3;
+#ifdef  MP3_DEBUG
+		static int count = 0;
+		if(count < 20000)
+		{
+			if(fp == NULL)
+				fp=fopen("mp1.dat","wb");
+			if(fp !=NULL && pExt->inputBufferCurrentLength)
+				fwrite( pExt->pInputBuffer, 4, pExt->outputFrameSize,fp);
+			count++;
+		}
+		else if(fp)
+			{
+				fclose(fp);
+				fp = NULL;
+			}
+#endif
+	return NO_DECODING_ERROR;
     }
 
     pExt->inputBufferUsedLength = pVars->inputStream.usedBits >> 3;
     pExt->totalNumberOfBitsUsed += pVars->inputStream.usedBits;
-    pExt->version = info->version_x;
-    pExt->samplingRate = mp3_s_freq[info->version_x][info->sampling_frequency];
-    pExt->bitRate = mp3_bitrate[pExt->version][info->bitrate_index];
+    //pExt->version = info->version_x;
+   // pExt->samplingRate = mp3_s_freq[info->version_x][info->sampling_frequency];
+    //pExt->bitRate = mp3_bitrate[pExt->version][info->bitrate_index];
 
 
     /*
@@ -675,6 +719,9 @@ void pvmp3_InitDecoder(tPVMP3DecoderExternal *pExt,
      *  Initialize huffman decoding table
      */
 
+	mad_stream_init(&pExt->stream);
+	mad_frame_init(&pExt->frame);
+	mad_synth_init(&pExt->synth);
     pHuff = pVars->ht;
     pHuff[0].linbits = 0;
     pHuff[0].pdec_huff_tab = pvmp3_decode_huff_cw_tab0;

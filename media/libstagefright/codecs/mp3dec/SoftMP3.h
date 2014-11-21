@@ -17,6 +17,15 @@
 #ifndef SOFT_MP3_H_
 
 #define SOFT_MP3_H_
+#define SUPPORT_NO_ENOUGH_MAIN_DATA 1
+#if SUPPORT_NO_ENOUGH_MAIN_DATA
+#define TMP_BUF_SIZE (1024*4)
+typedef struct tPVMP3BUFEXT
+{
+    uint8_t * buf;//the buf space is TMP_BUF_SIZE bytes
+    uint32_t len;//now the buf has len bytes data
+}tPVMP3BUFEXT;
+#endif
 
 #include "SimpleSoftOMXComponent.h"
 
@@ -63,6 +72,13 @@ private:
     bool mSignalledError;
     bool mSawInputEos;
     bool mSignalledOutputEos;
+#if SUPPORT_NO_ENOUGH_MAIN_DATA
+    tPVMP3BUFEXT mBufExt;
+    bool mIsFormatChange;
+    int32_t mFrameCount;
+    int32_t mDropFrameCount;
+    
+#endif
 
     enum {
         NONE,

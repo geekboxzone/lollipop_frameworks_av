@@ -194,6 +194,7 @@ ERROR_CODE pvmp3_frame_synch(tPVMP3DecoderExternal *pExt,
             {
                 /* frame should account for padding and 2 bytes to check sync */
                 pExt->CurrentFrameLength = numBytes + 3;
+				 pExt->inputBufferUsedLength = pVars->inputStream.usedBits >> 3;
                 return (SYNCH_LOST_ERROR);
             }
             else if (numBytes == (int32)pVars->inputStream.inputBufferCurrentLength)
@@ -229,6 +230,7 @@ ERROR_CODE pvmp3_frame_synch(tPVMP3DecoderExternal *pExt,
         else
         {
             pExt->inputBufferCurrentLength = 0;
+			 pExt->inputBufferUsedLength = pVars->inputStream.usedBits >> 3;
             err = SYNCH_LOST_ERROR;
         }
     }

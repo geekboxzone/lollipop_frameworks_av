@@ -89,7 +89,7 @@ extern "C"
     granuleInfo *gr_info,
     int32 *used_freq_lines,
     mp3Header *info,
-    int32  Scratch_mem[198]);
+    int32  Scratch_mem[256]);
 
 #ifdef __cplusplus
 }
