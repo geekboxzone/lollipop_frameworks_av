@@ -739,14 +739,6 @@ deinterlace_dev::~deinterlace_dev()
     case USING_IPP : {
         close(dev_fd);
     } break;
-    case USING_PP : {
-        if (NULL != priv_data) {
-            PP_OP_HANDLE hnd = (PP_OP_HANDLE)priv_data;
-            ppOpRelease(hnd);
-            priv_data = NULL;
-        }
-        VPUClientRelease(dev_fd);
-    } break;
     default : {
     } break;
     }
@@ -823,35 +815,6 @@ status_t deinterlace_dev::perform(VPU_FRAME *frm, uint32_t bypass)
             ops.run_async_ncb(api);
 
         } break;
-        case USING_PP : {
-            if (NULL == priv_data) {
-                PP_OPERATION opt;
-                memset(&opt, 0, sizeof(opt));
-                opt.srcAddr     = srcYAddr;
-                opt.srcFormat   = PP_IN_FORMAT_YUV420SEMI;
-                opt.srcWidth    = opt.srcHStride = width;
-                opt.srcHeight   = opt.srcVStride = height;
-
-                opt.dstAddr     = dstYAddr;
-                opt.dstFormat   = PP_OUT_FORMAT_YUV420INTERLAVE;
-                opt.dstWidth    = opt.dstHStride = width;
-                opt.dstHeight   = opt.dstVStride = height;
-                opt.deinterlace = 1;
-                opt.vpuFd       = dev_fd;
-                ret = ppOpInit(&priv_data, &opt);
-                if (ret) {
-                    ALOGE("ppOpInit failed");
-                    priv_data = NULL;
-                }
-            }
-
-            if (NULL != priv_data) {
-                PP_OP_HANDLE hnd = (PP_OP_HANDLE)priv_data;
-                ppOpSet(hnd, PP_SET_SRC_ADDR, srcYAddr);
-                ppOpSet(hnd, PP_SET_DST_ADDR, dstYAddr);
-                ret = ppOpPerform(hnd);
-            }
-        } break;
         default : {
             ret = BAD_VALUE;
         } break;
@@ -893,17 +856,7 @@ status_t deinterlace_dev::sync()
         }
         ret = 0;
     } break;
-    case USING_PP : {
-        if (NULL != priv_data) {
-            PP_OP_HANDLE hnd = (PP_OP_HANDLE)priv_data;
-            ret = ppOpSync(hnd);
-            if (ret) {
-                ALOGE("ppOpSync faild!");
-            }
-        } else {
-            ALOGE("no ppOp for doing deinterlace");
-        }
-    } break;
+
     default : {
     } break;
     }
