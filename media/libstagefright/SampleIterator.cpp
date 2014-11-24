@@ -37,7 +37,11 @@ SampleIterator::SampleIterator(SampleTable *table)
       mTTSSampleIndex(0),
       mTTSSampleTime(0),
       mTTSCount(0),
-      mTTSDuration(0) {
+      mTTSDuration(0),
+      mCTTSTime(0),
+      mCTTSIndex(0),
+      mCTTSCount(0),
+      mCTTSDuration(0){
     reset();
 }
 
@@ -287,7 +291,7 @@ status_t SampleIterator::getSampleSizeDirect(
 }
 
 status_t SampleIterator::findSampleTimeAndDuration(
-        uint32_t sampleIndex, uint32_t *time, uint32_t *duration) {
+        uint32_t sampleIndex, int64_t *time, uint32_t *duration) {
     if (sampleIndex >= mTable->mNumSampleSizes) {
         return ERROR_OUT_OF_RANGE;
     }
@@ -298,7 +302,7 @@ status_t SampleIterator::findSampleTimeAndDuration(
         }
 
         mTTSSampleIndex += mTTSCount;
-        mTTSSampleTime += mTTSCount * mTTSDuration;
+        mTTSSampleTime += (int64_t)mTTSCount * (int64_t)mTTSDuration;
 
         mTTSCount = mTable->mTimeToSample[2 * mTimeToSampleIndex];
         mTTSDuration = mTable->mTimeToSample[2 * mTimeToSampleIndex + 1];
@@ -306,12 +310,41 @@ status_t SampleIterator::findSampleTimeAndDuration(
         ++mTimeToSampleIndex;
     }
 
-    *time = mTTSSampleTime + mTTSDuration * (sampleIndex - mTTSSampleIndex);
-
-    *time += mTable->getCompositionTimeOffset(sampleIndex);
+    if(mTable->mComposTimeOffset) {
+        if(getCttsDuration(sampleIndex,mCTTSDuration)!= OK) {
+            return ERROR_OUT_OF_RANGE;
+        }
+	}
+    *time = mTTSSampleTime + (int64_t)mTTSDuration * (int64_t)(sampleIndex - mTTSSampleIndex);
+    if(mTable->mComposTimeOffset) {
+    	*time = *time + mCTTSDuration;
+    }
+  
 
     *duration = mTTSDuration;
 
+    return OK;
+}
+
+status_t SampleIterator::getCttsDuration(uint32_t sampleIndex,int32_t& duration)
+{
+    uint32_t index;
+    mCTTSIndex  = 0;
+    mCTTSTime = 0;
+    for(index = 0;index <= sampleIndex; index++){
+        if(mTable->mComposTimeOffset) {
+            if (mCTTSIndex == mTable->mComposTimeOffsetCount) {
+                return ERROR_OUT_OF_RANGE;
+            }
+            mCTTSCount = mTable->mComposTimeOffset[2 * mCTTSIndex];
+            duration = (int32_t)mTable->mComposTimeOffset[2 * mCTTSIndex + 1];
+            if ((mCTTSTime + mCTTSCount - 1) <= index) {
+            	 mCTTSTime += mCTTSCount;
+                 duration =(int32_t)mTable->mComposTimeOffset[2 * mCTTSIndex + 1];
+                 mCTTSIndex++;
+	        }
+        }
+    }
     return OK;
 }
 

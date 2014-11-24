@@ -30,6 +30,12 @@ extern const char *MEDIA_MIMETYPE_VIDEO_MPEG4;
 extern const char *MEDIA_MIMETYPE_VIDEO_H263;
 extern const char *MEDIA_MIMETYPE_VIDEO_MPEG2;
 extern const char *MEDIA_MIMETYPE_VIDEO_RAW;
+extern const char *MEDIA_MIMETYPE_VIDEO_MJPEG;
+extern const char *MEDIA_MIMETYPE_VIDEO_REALVIDEO;
+extern const char *MEDIA_MIMETYPE_VIDEO_FLV;
+extern const char *MEDIA_MIMETYPE_VIDEO_VC1;
+extern const char *MEDIA_MIMETYPE_VIDEO_WMV3;
+extern const char *MEDIA_MIMETYPE_VIDEO_VP6;
 
 extern const char *MEDIA_MIMETYPE_AUDIO_AMR_NB;
 extern const char *MEDIA_MIMETYPE_AUDIO_AMR_WB;
@@ -43,25 +49,41 @@ extern const char *MEDIA_MIMETYPE_AUDIO_OPUS;
 extern const char *MEDIA_MIMETYPE_AUDIO_G711_ALAW;
 extern const char *MEDIA_MIMETYPE_AUDIO_G711_MLAW;
 extern const char *MEDIA_MIMETYPE_AUDIO_RAW;
-extern const char *MEDIA_MIMETYPE_AUDIO_FLAC;
-extern const char *MEDIA_MIMETYPE_AUDIO_AAC_ADTS;
-extern const char *MEDIA_MIMETYPE_AUDIO_MSGSM;
 extern const char *MEDIA_MIMETYPE_AUDIO_AC3;
+extern const char *MEDIA_MIMETYPE_AUDIO_RA;
+extern const char *MEDIA_MIMETYPE_AUDIO_DTS;
+extern const char *MEDIA_MIMETYPE_AUDIO_WMA;
+extern const char *MEDIA_MIMETYPE_AUDIO_WMAPRO;
+extern const char *MEDIA_MIMETYPE_AUDIO_WAV;
+extern const char *MEDIA_MIMETYPE_AUDIO_AAC_ADTS;
+extern const char *MEDIA_MIMETYPE_AUDIO_FLAC;
+extern const char *MEDIA_MIMETYPE_AUDIO_MSGSM;
 
 extern const char *MEDIA_MIMETYPE_CONTAINER_MPEG4;
+extern const char *MEDIA_MIMETYPE_CONTAINER_MOV;
 extern const char *MEDIA_MIMETYPE_CONTAINER_WAV;
+extern const char *MEDIA_MIMETYPE_CONTAINER_WMA;
 extern const char *MEDIA_MIMETYPE_CONTAINER_OGG;
+extern const char *MEDIA_MIMETYPE_CONTAINER_ADTS;
+extern const char *MEDIA_MIMETYPE_CONTAINER_ADIF;
 extern const char *MEDIA_MIMETYPE_CONTAINER_MATROSKA;
 extern const char *MEDIA_MIMETYPE_CONTAINER_MPEG2TS;
-extern const char *MEDIA_MIMETYPE_CONTAINER_AVI;
-extern const char *MEDIA_MIMETYPE_CONTAINER_MPEG2PS;
 
 extern const char *MEDIA_MIMETYPE_CONTAINER_WVM;
+extern const char *MEDIA_MIMETYPE_CONTAINER_WIMO_VER1;
+extern const char *MEDIA_MIMETYPE_CONTAINER_WMV;
+extern const char *MEDIA_MIMETYPE_CONTAINER_MPG;
+extern const char *MEDIA_MIMETYPE_CONTAINER_REALVIDEO;
+extern const char *MEDIA_MIMETYPE_CONTAINER_FLV;
+extern const char *MEDIA_MIMETYPE_CONTAINER_AVI;
 
 extern const char *MEDIA_MIMETYPE_TEXT_3GPP;
 extern const char *MEDIA_MIMETYPE_TEXT_SUBRIP;
 extern const char *MEDIA_MIMETYPE_TEXT_VTT;
 extern const char *MEDIA_MIMETYPE_TEXT_CEA_608;
+extern const char *MEDIA_MIMETYPE_TEXT_MATROSKA_UTF8;
+extern const char *MEDIA_MIMETYPE_TEXT_MATROSKA_SSA;
+extern const char *MEDIA_MIMETYPE_TEXT_MATROSKA_VOBSUB;
 
 }  // namespace android
 

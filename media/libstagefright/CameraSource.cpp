@@ -840,10 +840,12 @@ status_t CameraSource::read(
 
         frameTime = *mFrameTimes.begin();
         mFrameTimes.erase(mFrameTimes.begin());
+        uint32_t FramePhyaddress = *((int*)frame->pointer());
         mFramesBeingEncoded.push_back(frame);
         *buffer = new MediaBuffer(frame->pointer(), frame->size());
         (*buffer)->setObserver(this);
         (*buffer)->add_ref();
+        (*buffer)->meta_data()->setInt32(kKeyBusAdds, FramePhyaddress);
         (*buffer)->meta_data()->setInt64(kKeyTime, frameTime);
     }
     return OK;

@@ -41,6 +41,7 @@ public:
             Parcel *parcel,
             const MediaSource::ReadOptions *options = NULL);
     virtual sp<MetaData> getFormat();
+    virtual status_t extractGlobalDescriptions(Parcel *parcel);
 
 protected:
     virtual ~TimedTextSRTSource();

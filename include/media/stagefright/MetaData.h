@@ -50,11 +50,13 @@ enum {
     kKeySampleRate        = 'srte',  // int32_t (audio sampling rate Hz)
     kKeyFrameRate         = 'frmR',  // int32_t (video frame rate fps)
     kKeyBitRate           = 'brte',  // int32_t (bps)
+    kKeyBitDepth          = 'bdph',  // int32_t (bit depth)
     kKeyESDS              = 'esds',  // raw data
     kKeyAACProfile        = 'aacp',  // int32_t
     kKeyAVCC              = 'avcc',  // raw data
     kKeyHVCC              = 'hvcc',  // raw data
     kKeyD263              = 'd263',  // raw data
+    kKeyVC1ExtraSize      = 'vc1e',  // vc1 extra data size
     kKeyVorbisInfo        = 'vinf',  // raw data
     kKeyVorbisBooks       = 'vboo',  // raw data
     kKeyOpusHeader        = 'ohdr',  // raw data
@@ -62,7 +64,24 @@ enum {
     kKeyOpusSeekPreRoll   = 'ospr',  // uint64_t (seek preroll in ns)
     kKeyWantsNALFragments = 'NALf',
     kKeyIsSyncFrame       = 'sync',  // int32_t (bool)
+    kKeyDeIntrelace       = 'deit',  // int32_t
+    kKeySeekFail          = 'skfl',  // int32_t
+    kKeyAvcSendDts        = 'avvc',  // int32_t
+    kKeyTimeRevert        = 'trvs',  // int32_t
+    kKeyBigLittle         = 'bili',  // int32_t
+	kKeyVC1               = 'vc1c',  // vc1 codec config info
+	kKeySubtitleLanguage  = 'slan',  // cstring
+	kKeySubtitleDuration  = 'sdur',  // int32_t (msecs) subtitle frame duration
+	kKeyMultiAudioSwitch  = 'masw',  // int32_t (bool)
+    kKeyWmvTrackCnt       = 'wcnt',  // int32_t, track count of wmv source
+    kKeyWma3FirstPos      = 'wfst',  // int32_t
+    kKeyWma3AudioStreamId = 'wasd',  // int32_t
+    kKeyVp6CodecId        = 'v6cd',   // int32_t
+    kKeyIsDiv3            = 'div3',  // int32_t (bool)
+    kKeyIsDivX            = 'divx',  // int32_t (bool)
+    kKeyIs3iv2            = '3iv2',  // int32_t (bool)
     kKeyIsCodecConfig     = 'conf',  // int32_t (bool)
+    kKeyBusAdds           = 'abus',  // uint32_t (pointer)
     kKeyTime              = 'time',  // int64_t (usecs)
     kKeyDecodingTime      = 'decT',  // int64_t (decoding timestamp in usecs)
     kKeyNTPTime           = 'ntpT',  // uint64_t (ntp-timestamp)
@@ -76,6 +95,7 @@ enum {
     kKeyBufferID          = 'bfID',
     kKeyMaxInputSize      = 'inpS',
     kKeyThumbnailTime     = 'thbT',  // int64_t (usecs)
+    kKeyThumbnailDec      = 'thbD',  // int32_t (bool)
     kKeyTrackID           = 'trID',
     kKeyIsDRM             = 'idrm',  // int32_t (bool)
     kKeyEncoderDelay      = 'encd',  // int32_t (frames)
@@ -102,7 +122,7 @@ enum {
     // video profile and level
     kKeyVideoProfile      = 'vprf',  // int32_t
     kKeyVideoLevel        = 'vlev',  // int32_t
-
+    kKeyAacInfo           = 'aaci',
     // Set this key to enable authoring files in 64-bit offset
     kKey64BitFileOffset   = 'fobt',  // int32_t (bool)
     kKey2ByteNalLength    = '2NAL',  // int32_t (bool)
@@ -126,20 +146,26 @@ enum {
 
     kKeyIsUnreadable      = 'unre',  // bool (int32_t)
 
+    kKeyImageType      = 'imty',
     // An indication that a video buffer has been rendered.
     kKeyRendered          = 'rend',  // bool (int32_t)
 
     // The language code for this media
     kKeyMediaLanguage     = 'lang',  // cstring
-
+	kKeyVpuMem      = 'vpua',  // bool (int32_t)
+    kKeyTvFlag      = 'wtvf', // bool (int32_t)
     // To store the timed text format data
     kKeyTextFormatData    = 'text',  // raw data
 
+    kKeyIsDeInterlace         = 'fild',  // int32_t
     kKeyRequiresSecureBuffers = 'secu',  // bool (int32_t)
 
     kKeyIsADTS            = 'adts',  // bool (int32_t)
     kKeyAACAOT            = 'aaot',  // int32_t
+	kKeyIsLATM			= 'latm',  //bool(int32_t)
+	kKeyAudioType = 'audt', // cstring
 
+	kKeyisTs      = 'tsmx',
     // If a MediaBuffer's data represents (at least partially) encrypted
     // data, the following fields aid in decryption.
     // The data can be thought of as pairs of plain and encrypted data
@@ -166,6 +192,8 @@ enum {
     kKeyCryptoDefaultIVSize = 'cryS',  // int32_t
 
     kKeyPssh              = 'pssh',  // raw data
+    kKeyWavExtInfo		= 'wavI',  //raw data
+    kKeyRkHevc          = 'rhvc', //int32_t =
 
     // Please see MediaFormat.KEY_IS_AUTOSELECT.
     kKeyTrackIsAutoselect = 'auto', // bool (int32_t)
@@ -173,6 +201,8 @@ enum {
     kKeyTrackIsDefault    = 'dflt', // bool (int32_t)
     // Similar to MediaFormat.KEY_IS_FORCED_SUBTITLE but pertains to av tracks as well.
     kKeyTrackIsForced     = 'frcd', // bool (int32_t)
+	kKeyExtraData       = 'extr',
+	kKeyIsMbaff         = 'mbaf',   // int32_t
 };
 
 enum {

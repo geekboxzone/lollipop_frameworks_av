@@ -48,8 +48,9 @@ public:
 
     status_t setTimeToSampleParams(off64_t data_offset, size_t data_size);
 
-    status_t setCompositionTimeToSampleParams(
-            off64_t data_offset, size_t data_size);
+   // status_t setCompositionTimeToSampleParams(
+           // off64_t data_offset, size_t data_size);
+    status_t setComposTimeOffParams(off64_t data_offset, size_t data_size);
 
     status_t setSyncSampleParams(off64_t data_offset, size_t data_size);
 
@@ -61,13 +62,21 @@ public:
 
     status_t getMaxSampleSize(size_t *size);
 
+    status_t mov_build_index();
     status_t getMetaDataForSample(
             uint32_t sampleIndex,
             off64_t *offset,
             size_t *size,
-            uint32_t *compositionTime,
+            int64_t *compositionTime,
             bool *isSyncSample = NULL,
             uint32_t *sampleDuration = NULL);
+			
+			status_t getMetaDataFromIndex(
+            uint32_t sampleIndex,
+            off64_t *offset,
+            size_t *size,
+            int64_t *compositionTime,
+            bool *isSyncSample = NULL);
 
     enum {
         kFlagBefore,
@@ -77,12 +86,18 @@ public:
     status_t findSampleAtTime(
             uint64_t req_time, uint64_t scale_num, uint64_t scale_den,
             uint32_t *sample_index, uint32_t flags);
+			
+	status_t findSampleFromIndex(
+        int64_t req_time, uint32_t *sample_index, uint32_t flags);
 
     status_t findSyncSampleNear(
             uint32_t start_sample_index, uint32_t *sample_index,
             uint32_t flags);
 
     status_t findThumbnailSample(uint32_t *sample_index);
+    void setSampleSize(uint32_t samplesize){
+        mSamplesize = samplesize;
+    };
 
 protected:
     ~SampleTable();
@@ -115,12 +130,14 @@ private:
 
     struct SampleTimeEntry {
         uint32_t mSampleIndex;
-        uint32_t mCompositionTime;
+        int64_t mCompositionTime;
     };
     SampleTimeEntry *mSampleTimeEntries;
 
-    uint32_t *mCompositionTimeDeltaEntries;
-    size_t mNumCompositionTimeDeltaEntries;
+   // uint32_t *mCompositionTimeDeltaEntries;
+  //  size_t mNumCompositionTimeDeltaEntries;
+    uint32_t mComposTimeOffsetCount;
+    uint32_t *mComposTimeOffset;
     CompositionDeltaLookup *mCompositionDeltaLookup;
 
     off64_t mSyncSampleOffset;
@@ -137,6 +154,14 @@ private:
     };
     SampleToChunkEntry *mSampleToChunkEntries;
 
+    struct AVIndexEntry {
+        int64_t pos;
+        int64_t timestamp;
+        int size;
+    };
+    AVIndexEntry *mSampleTableIndex;
+    int64_t mIndexEntry;
+    uint32_t mSamplesize;
     friend struct SampleIterator;
 
     // normally we don't round
@@ -147,7 +172,7 @@ private:
     }
 
     status_t getSampleSize_l(uint32_t sample_index, size_t *sample_size);
-    uint32_t getCompositionTimeOffset(uint32_t sampleIndex);
+   // uint32_t getCompositionTimeOffset(uint32_t sampleIndex) const;
 
     static int CompareIncreasingTime(const void *, const void *);
 

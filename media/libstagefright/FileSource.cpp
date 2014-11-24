@@ -22,6 +22,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define LOG_NDEBUG 0
+#define LOG_TAG "FileSource"
+#include <utils/Log.h>
 namespace android {
 
 FileSource::FileSource(const char *filename)
@@ -34,6 +37,11 @@ FileSource::FileSource(const char *filename)
       mDrmBufSize(0),
       mDrmBuf(NULL){
 
+	/*Begin: DTS2011120903153 added by g00166974 20110603 . */
+	/*Begin: DTS2011120903153 deleted by h00184579 20120325 for FD*/
+    //mFileName = filename;
+    /*End: DTS2011120903153 deleted by h00184579 20120325 for FD*/
+	mIsDrmPreview = false;
     mFd = open(filename, O_LARGEFILE | O_RDONLY);
 
     if (mFd >= 0) {
@@ -54,6 +62,12 @@ FileSource::FileSource(int fd, int64_t offset, int64_t length)
       mDrmBuf(NULL){
     CHECK(offset >= 0);
     CHECK(length >= 0);
+    /*Begin: DTS2011120903153 added by g00166974 20110603 . */
+    /*Begin: DTS2011120903153 deleted by h00184579 20120325 for FD*/
+    //mFileName = NULL;
+    /*End: DTS2011120903153 deleted by h00184579 20120325 for FD*/
+    mIsDrmPreview = false;
+    /*End: DTS2011120903153 added by g00166974 20110603 . */
 }
 
 FileSource::~FileSource() {
@@ -108,10 +122,21 @@ ssize_t FileSource::readAt(off64_t offset, void *data, size_t size) {
         off64_t result = lseek64(mFd, offset + mOffset, SEEK_SET);
         if (result == -1) {
             ALOGE("seek to %lld failed", offset + mOffset);
+			close(mFd);
+			mFd = -1;
             return UNKNOWN_ERROR;
         }
 
-        return ::read(mFd, data, size);
+		ssize_t ret  = ::read(mFd, data, size);
+
+		if(ret != size)
+		{		
+		    close(mFd);
+		    mFd = -1;
+			//ret = -1;
+        }
+		
+		return   ret;
     }
 }
 
@@ -122,12 +147,25 @@ status_t FileSource::getSize(off64_t *size) {
         return NO_INIT;
     }
 
-    *size = mLength;
+    if (mLength >= 0) {
+        *size = mLength;
 
+        return OK;
+    }
+
+    *size = lseek64(mFd, 0, SEEK_END);
     return OK;
 }
 
 sp<DecryptHandle> FileSource::DrmInitialization(const char *mime) {
+    const int OMA_DRM_TYPE = 1;
+    const int WIDEVINE_DRM_TYPE = 2;
+    const int NON_DRM_TYPE = 0;
+    int drmType = NON_DRM_TYPE;
+
+    if (mFd <= 0) {
+        return NULL;
+    }
     if (mDrmManagerClient == NULL) {
         mDrmManagerClient = new DrmManagerClient();
     }
@@ -144,6 +182,27 @@ sp<DecryptHandle> FileSource::DrmInitialization(const char *mime) {
     if (mDecryptHandle == NULL) {
         delete mDrmManagerClient;
         mDrmManagerClient = NULL;
+    } else {
+        switch(mDecryptHandle->decryptApiType) {
+            case DecryptApiType::CONTAINER_BASED: { //this is oma drm type
+                ALOGE("DrmInitialization isHwOmaDrm");
+                const int FLAG_DRM_PERMISSION_PLAY = 1;
+                mLength = mDrmManagerClient->consumeRights(mDecryptHandle, FLAG_DRM_PERMISSION_PLAY, mIsDrmPreview);
+                if (0 >= mLength){
+                    CHECK(mDrmManagerClient);
+                    ALOGE("DrmInitialization closeDecryptSession");
+                    mDrmManagerClient->closeDecryptSession(mDecryptHandle);
+                    mDecryptHandle = NULL;
+                    ALOGE("drm plaindata length is not more than 0>>consumerights return %d", mLength);
+                }
+                break;
+            }
+            default: {	//this is not drm type
+                mDecryptHandle = mDrmManagerClient->openDecryptSession(
+                    mFd, mOffset, mLength, mime);
+                break;
+            }
+        }
     }
 
     return mDecryptHandle;

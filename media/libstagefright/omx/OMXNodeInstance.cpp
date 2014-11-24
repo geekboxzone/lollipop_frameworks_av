@@ -279,7 +279,7 @@ status_t OMXNodeInstance::getParameter(
     Mutex::Autolock autoLock(mLock);
 
     OMX_ERRORTYPE err = OMX_GetParameter(mHandle, index, params);
-    ALOGE_IF(err != OMX_ErrorNone, "getParameter(%d) ERROR: %#x", index, err);
+    ALOGV_IF(err != OMX_ErrorNone, "getParameter(%d) ERROR: %#x", index, err);
     return StatusFromOMXError(err);
 }
 

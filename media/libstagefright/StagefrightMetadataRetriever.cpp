@@ -20,7 +20,7 @@
 #include <inttypes.h>
 
 #include <utils/Log.h>
-
+#include "vpu_global.h"
 #include "include/StagefrightMetadataRetriever.h"
 
 #include <media/IMediaHTTPService.h>
@@ -60,6 +60,8 @@ status_t StagefrightMetadataRetriever::setDataSource(
         const KeyedVector<String8, String8> *headers) {
     ALOGV("setDataSource(%s)", uri);
 
+	int i;
+	const char *mime = NULL;
     mParsedMetaData = false;
     mMetaData.clear();
     delete mAlbumArt;
@@ -71,8 +73,34 @@ status_t StagefrightMetadataRetriever::setDataSource(
         ALOGE("Unable to create data source for '%s'.", uri);
         return UNKNOWN_ERROR;
     }
+    mSource.get()->setDrmPreviewMode();
 
-    mExtractor = MediaExtractor::Create(mSource);
+	#if 1
+	{
+		const  char *cm = uri;
+		int end_point = 0;
+		int search_point = 0;
+
+		while (uri[search_point] != '\0'){
+			search_point++;
+
+		}
+
+
+		end_point = search_point;
+
+		while (uri[search_point] != '.'||(search_point + 8)== end_point){
+			search_point--;
+
+
+		}
+
+		if(((uri[search_point] == '.')&&(search_point + 8 )> end_point))
+			mime = &uri[search_point+1];
+
+	}
+	#endif
+    mExtractor = MediaExtractor::Create(mSource,mime,false,uri);
 
     if (mExtractor == NULL) {
         ALOGE("Unable to instantiate an extractor for '%s'.", uri);
@@ -106,6 +134,7 @@ status_t StagefrightMetadataRetriever::setDataSource(
         return err;
     }
 
+    mSource.get()->setDrmPreviewMode();
     mExtractor = MediaExtractor::Create(mSource);
 
     if (mExtractor == NULL) {
@@ -151,18 +180,24 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
         int seekMode) {
 
     sp<MetaData> format = source->getFormat();
+	format->setInt32(kKeyThumbnailDec,1);
 
     // XXX:
     // Once all vendors support OMX_COLOR_FormatYUV420Planar, we can
     // remove this check and always set the decoder output color format
-    if (isYUV420PlanarSupported(client, trackMeta)) {
+ /*   if (isYUV420PlanarSupported(client, trackMeta)) {
         format->setInt32(kKeyColorFormat, OMX_COLOR_FormatYUV420Planar);
-    }
+    }*/
 
     sp<MediaSource> decoder =
         OMXCodec::Create(
                 client->interface(), format, false, source,
-                NULL, flags | OMXCodec::kClientNeedsFramebuffer);
+                NULL, flags | OMXCodec::kClientNeedsFramebuffer | OMXCodec::kSoftwareCodecsOnly);
+    const char *mime;
+   	format->findCString(kKeyMIMEType, &mime);
+    if(!strcmp(mime,"video/hevc")){
+        frameTimeUs = 0;
+    }
 
     if (decoder.get() == NULL) {
         ALOGV("unable to instantiate video decoder.");
@@ -190,6 +225,12 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
     MediaSource::ReadOptions::SeekMode mode =
             static_cast<MediaSource::ReadOptions::SeekMode>(seekMode);
 
+   if (frameTimeUs < 0) {
+        int64_t tmpDurUs = 0;
+        if (trackMeta->findInt64(kKeyDuration, &tmpDurUs)) {
+            frameTimeUs = (int64_t)(tmpDurUs/3);
+        }
+    }
     int64_t thumbNailTime;
     if (frameTimeUs < 0) {
         if (!trackMeta->findInt64(kKeyThumbnailTime, &thumbNailTime)
@@ -203,15 +244,47 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
     }
 
     MediaBuffer *buffer = NULL;
+    err = decoder->read(&buffer);
+
+    if (buffer != NULL) {
+       if(buffer->range_length() > 0){
+           buffer->releaseframe();
+       }else{
+           buffer->release();
+       }
+       buffer = NULL;
+    }
+    int32_t decodedWidth, decodedHeight;
+    bool endFlag = false;
+
     do {
+        if (err == INFO_FORMAT_CHANGED) {
+            if (decoder->getFormat()->findInt32(kKeyWidth, &decodedWidth)) {
+                source->getFormat()->setInt32(kKeyWidth, decodedWidth);
+            }
+
+            if (decoder->getFormat()->findInt32(kKeyHeight, &decodedHeight)) {
+                source->getFormat()->setInt32(kKeyHeight, decodedHeight);
+            }
+        }
         if (buffer != NULL) {
             buffer->release();
             buffer = NULL;
         }
         err = decoder->read(&buffer, &options);
         options.clearSeekTo();
+        if(err == ERROR_END_OF_STREAM){
+            if(!endFlag){
+                ALOGI("goto seek to zero");
+                options.setSeekTo(0,mode);
+                endFlag = true;
+            }else{
+                break;
+            }
+        }
     } while (err == INFO_FORMAT_CHANGED
-             || (buffer != NULL && buffer->range_length() == 0));
+                    || (buffer != NULL && buffer->range_length() == 0)
+    || err == ERROR_END_OF_STREAM);
 
     if (err != OK) {
         CHECK(buffer == NULL);
@@ -230,7 +303,7 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
         ALOGV("video frame is unreadable, decoder does not give us access "
              "to the video data.");
 
-        buffer->release();
+        buffer->releaseframe();
         buffer = NULL;
 
         decoder->stop();
@@ -245,7 +318,7 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
             const char *mime;
             CHECK(trackMeta->findCString(kKeyMIMEType, &mime));
 
-            ALOGV("thumbNailTime = %" PRId64 " us, timeUs = %" PRId64 " us, mime = %s",
+            ALOGV("thumbNailTime = %lld us, timeUs = %lld us, mime = %s",
                  thumbNailTime, timeUs, mime);
         }
     }
@@ -256,6 +329,8 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
     CHECK(meta->findInt32(kKeyWidth, &width));
     CHECK(meta->findInt32(kKeyHeight, &height));
 
+    width = (width + 3)&(~3);
+    height = (height + 3)&(~3);
     int32_t crop_left, crop_top, crop_right, crop_bottom;
     if (!meta->findRect(
                 kKeyCropRect,
@@ -263,6 +338,11 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
         crop_left = crop_top = 0;
         crop_right = width - 1;
         crop_bottom = height - 1;
+    }
+    int32_t srcFormat;
+    CHECK(meta->findInt32(kKeyColorFormat, &srcFormat));
+    if(srcFormat == OMX_COLOR_FormatYUV420Planar){
+        crop_right = width - 64;
     }
 
     int32_t rotationAngle;
@@ -273,8 +353,8 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
     VideoFrame *frame = new VideoFrame;
     frame->mWidth = crop_right - crop_left + 1;
     frame->mHeight = crop_bottom - crop_top + 1;
-    frame->mDisplayWidth = frame->mWidth;
-    frame->mDisplayHeight = frame->mHeight;
+    frame->mDisplayWidth = crop_right - crop_left;
+    frame->mDisplayHeight = crop_bottom - crop_top;
     frame->mSize = frame->mWidth * frame->mHeight * 2;
     frame->mData = new uint8_t[frame->mSize];
     frame->mRotationAngle = rotationAngle;
@@ -287,21 +367,48 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
         frame->mDisplayHeight = displayHeight;
     }
 
-    int32_t srcFormat;
-    CHECK(meta->findInt32(kKeyColorFormat, &srcFormat));
+
 
     ColorConverter converter(
             (OMX_COLOR_FORMATTYPE)srcFormat, OMX_COLOR_Format16bitRGB565);
 
     if (converter.isValid()) {
+        if(srcFormat == OMX_COLOR_FormatYUV420Planar){
+             err = converter.convert(
+				(const uint8_t *)buffer->data(),
+				width,height,
+				crop_left, crop_top, crop_right, crop_bottom,
+				frame->mData,
+				frame->mWidth,
+				frame->mHeight,
+				0, 0, frame->mWidth - 1, frame->mHeight - 1);
+        }else{
+		VPU_FRAME *YuvFrame =(VPU_FRAME*)buffer->data();
+    	VPUMemLink(&YuvFrame->vpumem);
+        VPUMemInvalidate(&YuvFrame->vpumem);
+        const char *mime;
+        int32_t vir_w =0, vir_h =0;
+
+        if ((trackMeta->findCString(kKeyMIMEType, &mime))) {
+            if (!strcasecmp(mime, MEDIA_MIMETYPE_VIDEO_HEVC)) {
+                vir_w = (((width + 255) & (~255)) | 256);
+                vir_h = ((height + 7) & (~7));
+            } else {
+                vir_w = ((width + 15) & (~15));
+                vir_h = ((height + 15) & (~15));
+            }
+        }
+
         err = converter.convert(
-                (const uint8_t *)buffer->data() + buffer->range_offset(),
-                width, height,
+				(const uint8_t *)YuvFrame->vpumem.vir_addr,
+				vir_w, vir_h,
                 crop_left, crop_top, crop_right, crop_bottom,
                 frame->mData,
                 frame->mWidth,
                 frame->mHeight,
                 0, 0, frame->mWidth - 1, frame->mHeight - 1);
+		VPUFreeLinear(&YuvFrame->vpumem);
+        }
     } else {
         ALOGE("Unable to instantiate color conversion from format 0x%08x to "
               "RGB565",
@@ -555,7 +662,10 @@ void StagefrightMetadataRetriever::parseMetaData() {
                 if (!trackMeta->findInt32(kKeyRotation, &rotationAngle)) {
                     rotationAngle = 0;
                 }
-            } else if (!strcasecmp(mime, MEDIA_MIMETYPE_TEXT_3GPP)) {
+            } else if ((!strcasecmp(mime, MEDIA_MIMETYPE_TEXT_3GPP)) ||
+                        (!strcasecmp(mime, MEDIA_MIMETYPE_TEXT_MATROSKA_UTF8)) ||
+                        (!strcasecmp(mime, MEDIA_MIMETYPE_TEXT_MATROSKA_SSA)) ||
+                        (!strcasecmp(mime, MEDIA_MIMETYPE_TEXT_MATROSKA_VOBSUB))) {
                 const char *lang;
                 trackMeta->findCString(kKeyMediaLanguage, &lang);
                 timedTextLang.append(String8(lang));

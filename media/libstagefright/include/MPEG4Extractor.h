@@ -27,12 +27,26 @@
 #include <utils/Vector.h>
 #include <utils/String8.h>
 
+#define QT_PCM
+#define QT_MAX_AUDIO_WAVFMT_SIZE		20
 namespace android {
 
 struct AMessage;
 class DataSource;
 class SampleTable;
 class String8;
+struct MPEG4Source;
+typedef struct
+{
+    uint16_t    FormatTag;
+    uint16_t    Channels;
+    uint32_t    SamplesPerSec;
+    uint32_t    AvgBytesPerSec;
+    uint16_t    BlockAlign;
+    uint16_t    BitsPerSample;
+    uint16_t    Size;
+	uint16_t	  SamplesPerBlock;
+}WaveFormatExStruct;
 
 struct SidxEntry {
     size_t mSize;
@@ -61,12 +75,17 @@ public:
 
     // for DRM
     virtual char* getDrmTrackInfo(size_t trackID, int *len);
-
+#ifdef QT_PCM
+    uint32_t audioExtraSize;//add by Charles Chen
+    uint8_t audioExtraData[QT_MAX_AUDIO_WAVFMT_SIZE];
+    bool bWavCodecPrivateSend;
+#endif
 protected:
     virtual ~MPEG4Extractor();
 
 private:
 
+	friend struct MPEG4Source;
     struct PsshInfo {
         uint8_t uuid[16];
         uint32_t datalen;
@@ -82,6 +101,7 @@ private:
     };
 
     Vector<SidxEntry> mSidxEntries;
+    uint64_t mSidxDuration;
     off64_t mMoofOffset;
 
     Vector<PsshInfo> mPssh;
@@ -92,6 +112,8 @@ private:
     status_t mInitCheck;
     bool mHasVideo;
     uint32_t mHeaderTimescale;
+	long stream_num;
+    long long   min_off[16];
 
     Track *mFirstTrack, *mLastTrack;
 
@@ -131,6 +153,7 @@ private:
     status_t parseSegmentIndex(off64_t data_offset, size_t data_size);
 
     Track *findTrackByMimePrefix(const char *mimePrefix);
+    int rk_mov_lang_to_iso639(unsigned code, char to[4]);
 
     MPEG4Extractor(const MPEG4Extractor &);
     MPEG4Extractor &operator=(const MPEG4Extractor &);

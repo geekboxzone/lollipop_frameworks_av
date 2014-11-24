@@ -1,6 +1,14 @@
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
+LOCAL_SRC_FILES:=                         \
+        version.cpp
+$(SHELL $(LOCAL_PATH)/version.sh)
+LOCAL_CFLAGS += -Wno-multichar
+LOCAL_MODULE:= libstagefright_version
+include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
 include frameworks/av/media/libstagefright/codecs/common/Config.mk
 
 LOCAL_SRC_FILES:=                         \
@@ -11,6 +19,7 @@ LOCAL_SRC_FILES:=                         \
         AMRWriter.cpp                     \
         AudioPlayer.cpp                   \
         AudioSource.cpp                   \
+        FrameQueueManage.cpp              \
         AwesomePlayer.cpp                 \
         CameraSource.cpp                  \
         CameraSourceTimeLapse.cpp         \
@@ -37,6 +46,8 @@ LOCAL_SRC_FILES:=                         \
         MediaDefs.cpp                     \
         MediaExtractor.cpp                \
         http/MediaHTTP.cpp                \
+        ExtendedExtractor.cpp             \
+        RkAudioDecoder.cpp                \
         MediaMuxer.cpp                    \
         MediaSource.cpp                   \
         MetaData.cpp                      \
@@ -60,6 +71,9 @@ LOCAL_SRC_FILES:=                         \
         WVMExtractor.cpp                  \
         XINGSeeker.cpp                    \
         avc_utils.cpp                     \
+        get_ape_id3.cpp                   \
+        get_flac_id3.cpp                  \
+        ApeGetFileInfo.cpp                \
 
 LOCAL_C_INCLUDES:= \
         $(TOP)/frameworks/av/include/media/ \
@@ -68,11 +82,17 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/frameworks/native/include/media/openmax \
         $(TOP)/external/flac/include \
         $(TOP)/external/tremolo \
+        $(TOP)/frameworks/av/include/media/stagefright \
+        $(TOP)/frameworks/av/media/libstagefright/include \
+        $(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
+        $(TOP)/frameworks/av/media/libstagefright/libvpu/common \
         $(TOP)/external/openssl/include \
         $(TOP)/external/libvpx/libwebm \
         $(TOP)/system/netd/include \
         $(TOP)/external/icu/icu4c/source/common \
         $(TOP)/external/icu/icu4c/source/i18n \
+	    $(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
+        $(TOP)/hardware/rk29/librkvpu 
 
 LOCAL_SHARED_LIBRARIES := \
         libbinder \
@@ -97,12 +117,16 @@ LOCAL_SHARED_LIBRARIES := \
         libutils \
         libvorbisidec \
         libz \
-        libpowermanager
+        libpowermanager \
+        librk_vpuapi \
+        libmedia 
 
 LOCAL_STATIC_LIBRARIES := \
         libstagefright_color_conversion \
         libstagefright_aacenc \
-        libstagefright_matroska \
+        libstagefright_flacdec\
+        libstagefright_rkvpudec \
+        libstagefright_rkvpuenc \
         libstagefright_webm \
         libstagefright_timedtext \
         libvpx \
@@ -110,13 +134,15 @@ LOCAL_STATIC_LIBRARIES := \
         libstagefright_mpeg2ts \
         libstagefright_id3 \
         libFLAC \
-        libmedia_helper
+        libmedia_helper \
+        libstagefright_version\
 
 LOCAL_SHARED_LIBRARIES += \
         libstagefright_enc_common \
         libstagefright_avc_common \
         libstagefright_foundation \
-        libdl
+        libdl \
+        libvpu
 
 LOCAL_CFLAGS += -Wno-multichar
 

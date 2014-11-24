@@ -30,6 +30,12 @@
 
 // Sonivox includes
 #include <libsonivox/eas.h>
+#define GETAPETAG
+#ifdef GETAPETAG
+#include "ApeGetFileInfo.h"
+#include "get_ape_id3.h"
+#endif
+#include <utils/String8.h>
 
 namespace android {
 
@@ -39,11 +45,12 @@ StagefrightMediaScanner::~StagefrightMediaScanner() {}
 
 static bool FileHasAcceptableExtension(const char *extension) {
     static const char *kValidExtensions[] = {
-        ".mp3", ".mp4", ".m4a", ".3gp", ".3gpp", ".3g2", ".3gpp2",
+        ".mp3", ".mp4",".mov",".m4a", ".3gp", ".3gpp", ".3g2", ".3gpp2",
         ".mpeg", ".ogg", ".mid", ".smf", ".imy", ".wma", ".aac",
         ".wav", ".amr", ".midi", ".xmf", ".rtttl", ".rtx", ".ota",
-        ".mkv", ".mka", ".webm", ".ts", ".fl", ".flac", ".mxmf",
-        ".avi", ".mpeg", ".mpg", ".awb", ".mpga"
+        ".mkv", ".mka", ".webm", ".ts",".avi",".flv",".wmv", ".asf", ".mpg",
+        ".vob",".dat",  ".rm",".rmvb",".flac",".ape",".mpga",".ts",".tp",
+        ".trp",".m2ts", ".mxmf",".mp2",".mp1",".mxmf", ".f4v", ".mts", ".divx", ".dcf"
     };
     static const size_t kNumValidExtensions =
         sizeof(kValidExtensions) / sizeof(kValidExtensions[0]);
@@ -105,6 +112,85 @@ static MediaScanResult HandleMIDI(
     return MEDIA_SCAN_RESULT_OK;
 }
 
+#ifdef GETAPETAG
+static MediaScanResult parseAPE(const char *filename, MediaScannerClient& client)
+{
+	FILE* apeFile = fopen(filename,"r");
+	ALOGD("parseAPE filename = %s",filename);
+	if (!apeFile)
+        return MEDIA_SCAN_RESULT_ERROR;
+	struct APE_FILE_INFO ape_file_info;
+
+    if(ERROR_SUCCESS == ApeHeaderAnalyze(apeFile, &ape_file_info))
+    {
+		ALOGD("parseAPE ApeHeaderAnalyze success");
+		char buffer[20];
+		//int bitrate = 0;
+		int samplerate = 0;
+
+		//get duration
+		ALOGD("duration =%d bitrate= %d",ape_file_info.nLengthMS,ape_file_info.nAverageBitrate);
+	  	if(ape_file_info.nLengthMS > 0)
+	  	{
+
+			sprintf(buffer, "%d", ape_file_info.nLengthMS);
+	        if (!client.addStringTag("duration", buffer)) goto failure;
+	  	}
+
+		//get bitrate
+		if (ape_file_info.nAverageBitrate > 0)
+		{
+			sprintf(buffer,"%d",ape_file_info.nAverageBitrate);
+			if(!client.addStringTag("bitrate", buffer)) goto failure;
+		}
+		//get SampleRate
+		if(ape_file_info.nSampleRate > 0)
+		{
+			sprintf(buffer,"%d",ape_file_info.nSampleRate);
+			if(!client.addStringTag("samplerate", buffer)) goto failure;
+		}
+    }
+	else
+    {
+		ALOGE("now this format ape will didnit support");
+		goto failure;
+    }
+
+	ALOGD("ape get ID3 in");
+	ApeId3 apeId3;
+	if (!apeId3.getapetagex(apeFile))
+	{
+
+		ALOGD("ape get ID3 ");
+		if(strlen(apeId3.apetagex.Artist))
+		{
+			if(!client.addStringTag("artist", apeId3.apetagex.Artist)) goto failure;
+		}
+		if(strlen(apeId3.apetagex.Album))
+		{
+			if(!client.addStringTag("album", apeId3.apetagex.Album)) goto failure;
+		}
+		if(strlen(apeId3.apetagex.Year))
+		{
+			if(!client.addStringTag("year", apeId3.apetagex.Year)) goto failure;
+		}
+		if(strlen(apeId3.apetagex.Genre))
+		{
+			if(!client.addStringTag("genre", apeId3.apetagex.Genre)) goto failure;
+		}
+	}
+	ALOGD("ape get ID3 out");
+
+	//the following code will be parse the ID3 info
+	fclose(apeFile);
+	return MEDIA_SCAN_RESULT_OK;
+
+failure:
+	fclose(apeFile);
+    return MEDIA_SCAN_RESULT_ERROR;
+}
+
+#endif
 MediaScanResult StagefrightMediaScanner::processFile(
         const char *path, const char *mimeType,
         MediaScannerClient &client) {
@@ -141,7 +227,11 @@ MediaScanResult StagefrightMediaScanner::processFileInternal(
             || !strcasecmp(extension, ".mxmf")) {
         return HandleMIDI(path, &client);
     }
-
+#ifdef GETAPETAG
+	  if (!strcasecmp(extension, ".ape")) {
+	    return parseAPE(path, client);
+	}
+#endif//GETAPETAG
     sp<MediaMetadataRetriever> mRetriever(new MediaMetadataRetriever);
 
     int fd = open(path, O_RDONLY | O_LARGEFILE);
@@ -193,6 +283,14 @@ MediaScanResult StagefrightMediaScanner::processFileInternal(
     for (size_t i = 0; i < kNumEntries; ++i) {
         const char *value;
         if ((value = mRetriever->extractMetadata(kKeyMap[i].key)) != NULL) {
+			String8 rkTag(value);
+			
+			if(rkTag.find("rkutf8") == 0)
+			{
+				//LOGI("-->key %s value %s",kKeyMap[i].tag,value);
+				status = client.handleStringTag(kKeyMap[i].tag, value+6);
+			}	
+			else
             status = client.addStringTag(kKeyMap[i].tag, value);
             if (status != OK) {
                 return MEDIA_SCAN_RESULT_ERROR;

@@ -73,7 +73,7 @@ static player_type getDefaultPlayerType() {
         return STAGEFRIGHT_PLAYER;
     }
 
-    return NU_PLAYER;
+    return STAGEFRIGHT_PLAYER;
 }
 
 status_t MediaPlayerFactory::registerFactory(IFactory* factory,

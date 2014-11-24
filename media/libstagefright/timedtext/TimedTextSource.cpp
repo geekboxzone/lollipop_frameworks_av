@@ -28,6 +28,7 @@
 
 #include "TimedText3GPPSource.h"
 #include "TimedTextSRTSource.h"
+#include "TimedTextMatroskaSource.h"
 
 namespace android {
 
@@ -38,6 +39,10 @@ sp<TimedTextSource> TimedTextSource::CreateTimedTextSource(
     CHECK(mediaSource->getFormat()->findCString(kKeyMIMEType, &mime));
     if (strcasecmp(mime, MEDIA_MIMETYPE_TEXT_3GPP) == 0) {
         return new TimedText3GPPSource(mediaSource);
+    } else if ((strcasecmp(mime, MEDIA_MIMETYPE_TEXT_MATROSKA_UTF8) == 0) ||
+                (strcasecmp(mime, MEDIA_MIMETYPE_TEXT_MATROSKA_SSA) == 0) ||
+                (strcasecmp(mime, MEDIA_MIMETYPE_TEXT_MATROSKA_VOBSUB) == 0)) {
+        return new TimedTextMatroskaSource(mediaSource);
     }
     ALOGE("Unsupported mime type for subtitle. : %s", mime);
     return NULL;

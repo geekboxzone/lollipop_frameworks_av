@@ -6,14 +6,16 @@ LOCAL_SRC_FILES:=                 \
         AnotherPacketSource.cpp   \
         ATSParser.cpp             \
         ESQueue.cpp               \
-        MPEG2PSExtractor.cpp      \
         MPEG2TSExtractor.cpp      \
+			bitstream.cpp
 
 LOCAL_C_INCLUDES:= \
+		$(JNI_H_INCLUDE) \
+		$(TOP)/frameworks/native/include/media/openmax \
 	$(TOP)/frameworks/av/media/libstagefright \
-	$(TOP)/frameworks/native/include/media/openmax
+	$(TOP)/frameworks/native/include/media/openmax \
+	$(TOP)/hardware/rk29/librkvpu
 
-LOCAL_CFLAGS += -Werror
 
 LOCAL_MODULE:= libstagefright_mpeg2ts
 

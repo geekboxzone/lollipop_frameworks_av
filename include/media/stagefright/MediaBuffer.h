@@ -59,7 +59,8 @@ public:
     // Decrements the reference count and returns the buffer to its
     // associated MediaBufferGroup if the reference count drops to 0.
     virtual void release();
-
+	
+	void releaseframe();
     // Increments the reference count.
     virtual void add_ref();
 

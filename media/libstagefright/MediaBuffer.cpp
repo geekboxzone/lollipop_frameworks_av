@@ -25,7 +25,7 @@
 #include <media/stagefright/foundation/ADebug.h>
 #include <media/stagefright/MediaBuffer.h>
 #include <media/stagefright/MetaData.h>
-
+#include "vpu_global.h"
 #include <ui/GraphicBuffer.h>
 
 namespace android {
@@ -103,6 +103,21 @@ void MediaBuffer::release() {
     CHECK(prevCount > 0);
 }
 
+void MediaBuffer::releaseframe() {
+#ifndef FRAME_COPY
+    if(mGraphicBuffer == NULL)
+    {
+    	VPU_FRAME	*frame;
+    	frame = (VPU_FRAME*)mData;
+    	if (frame->vpumem.phy_addr)
+    	{
+    		VPUMemLink(&frame->vpumem);
+    		VPUFreeLinear(&frame->vpumem);
+    	}
+    }
+#endif
+	release();
+}
 void MediaBuffer::claim() {
     CHECK(mObserver != NULL);
     CHECK_EQ(mRefCount, 1);

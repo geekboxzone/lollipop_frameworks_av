@@ -53,6 +53,7 @@ status_t TimedTextSRTSource::start() {
 }
 
 void TimedTextSRTSource::reset() {
+    mMetaData->clear();
     mTextVector.clear();
     mIndex = 0;
 }
@@ -80,6 +81,10 @@ status_t TimedTextSRTSource::read(
 
 sp<MetaData> TimedTextSRTSource::getFormat() {
     return mMetaData;
+}
+status_t TimedTextSRTSource::extractGlobalDescriptions(Parcel *parcel)
+{
+    return OK;
 }
 
 status_t TimedTextSRTSource::scanFile() {

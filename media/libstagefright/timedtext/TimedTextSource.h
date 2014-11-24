@@ -52,6 +52,9 @@ class TimedTextSource : public RefBase {
   }
   virtual sp<MetaData> getFormat();
 
+  virtual void setTimedTextSourceObserver(void* observer) {
+      return;
+  }
  protected:
   virtual ~TimedTextSource() { }
 

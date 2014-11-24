@@ -53,7 +53,7 @@ enum {
     INFO_FORMAT_CHANGED    = MEDIA_ERROR_BASE - 12,
     INFO_DISCONTINUITY     = MEDIA_ERROR_BASE - 13,
     INFO_OUTPUT_BUFFERS_CHANGED = MEDIA_ERROR_BASE - 14,
-
+	INFO_TIME_OUT          = MEDIA_ERROR_BASE - 15,
     // The following constant values should be in sync with
     // drm/drm_framework_common.h
     DRM_ERROR_BASE = -2000,

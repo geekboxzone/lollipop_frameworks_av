@@ -38,6 +38,8 @@ status_t TextDescriptions::getParcelOfDescriptions(
         if (flags & LOCAL_DESCRIPTIONS) {
             return extractSRTLocalDescriptions(data, size, timeMs, parcel);
         }
+    } else if (flags & IN_BAND_TEXT_MATROSKA) {
+        return extractMatroskaLocalDescriptions(data, size, timeMs, parcel);
     }
 
     return ERROR_UNSUPPORTED;
@@ -382,4 +384,21 @@ status_t TextDescriptions::extract3GPPGlobalDescriptions(
     return OK;
 }
 
+status_t TextDescriptions::extractMatroskaLocalDescriptions(
+        const uint8_t *data, ssize_t size,
+        int timeMs, Parcel *parcel) {
+
+   parcel->writeInt32(KEY_LOCAL_SETTING);
+   parcel->writeInt32(KEY_START_TIME);
+   parcel->writeInt32(timeMs);
+
+   parcel->writeInt32(KEY_STRUCT_TEXT);
+   // write the size of the text sample
+   parcel->writeInt32(size);
+   // write the text sample as a byte array
+   parcel->writeInt32(size);
+   parcel->write(data, size);
+
+   return OK;
+}
 }  // namespace android

@@ -1211,6 +1211,9 @@ status_t PlaylistFetcher::extractAndQueueAccessUnitsFromTs(const sp<ABuffer> &bu
         if (source == NULL) {
             continue;
         }
+        if(packetSource->getFormat() == NULL){
+            packetSource->setFormat(source->getFormat());
+        }
 
         int64_t timeUs;
         sp<ABuffer> accessUnit;

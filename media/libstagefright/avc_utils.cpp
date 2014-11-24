@@ -40,25 +40,35 @@ unsigned parseUE(ABitReader *br) {
     return x + (1u << numZeroes) - 1;
 }
 
-signed parseSE(ABitReader *br) {
-    unsigned codeNum = parseUE(br);
-
-    return (codeNum & 1) ? (codeNum + 1) / 2 : -(codeNum / 2);
-}
-
-static void skipScalingList(ABitReader *br, size_t sizeOfScalingList) {
-    size_t lastScale = 8;
-    size_t nextScale = 8;
-    for (size_t j = 0; j < sizeOfScalingList; ++j) {
-        if (nextScale != 0) {
-            signed delta_scale = parseSE(br);
-            nextScale = (lastScale + delta_scale + 256) % 256;
+uint8_t scan2raster[16]  =
+{
+    0,  1,  4,  8,  5,  2,  3,  6,  9, 12, 13, 10,  7, 11, 14, 15
+};
+uint8_t scan2raster8[64] =
+{
+     0,  1,  8, 16,  9,  2,  3, 10, 17, 24, 32, 25, 18, 11,  4,  5,
+    12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13,  6,  7, 14, 21, 28,
+    35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51,
+    58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63
+};
+void read_scaling_list(ABitReader *br, int32_t is8x8)
+{
+    int32_t  j, scanj, loop = (is8x8) ? (64) : (16);
+    int32_t  delta_scale, lastScale, nextScale;
+    uint8_t *tab = (is8x8) ? (&scan2raster8[0]) : (&scan2raster[0]);
+    lastScale      = 8;
+    nextScale      = 8;
+    for (j = 0; j < loop; j++)
+    {
+        scanj = tab[j];
+        if (nextScale != 0)
+        {
+            delta_scale = parseUE(br);
+            nextScale = (lastScale + delta_scale + 256) & 0xFF;
         }
-
         lastScale = (nextScale == 0) ? lastScale : nextScale;
     }
 }
-
 // Determine video dimensions from the sequence parameterset.
 void FindAVCDimensions(
         const sp<ABuffer> &seqParamSet,
@@ -75,6 +85,7 @@ void FindAVCDimensions(
     if (profile_idc == 100 || profile_idc == 110
             || profile_idc == 122 || profile_idc == 244
             || profile_idc == 44 || profile_idc == 83 || profile_idc == 86) {
+        uint32_t temp = 0;
         chroma_format_idc = parseUE(&br);
         if (chroma_format_idc == 3) {
             br.skipBits(1);  // residual_colour_transform_flag
@@ -82,21 +93,20 @@ void FindAVCDimensions(
         parseUE(&br);  // bit_depth_luma_minus8
         parseUE(&br);  // bit_depth_chroma_minus8
         br.skipBits(1);  // qpprime_y_zero_transform_bypass_flag
-
-        if (br.getBits(1)) {  // seq_scaling_matrix_present_flag
-            for (size_t i = 0; i < 8; ++i) {
-                if (br.getBits(1)) {  // seq_scaling_list_present_flag[i]
-
-                    // WARNING: the code below has not ever been exercised...
-                    // need a real-world example.
-
-                    if (i < 6) {
-                        // ScalingList4x4[i],16,...
-                        skipScalingList(&br, 16);
-                    } else {
-                        // ScalingList8x8[i-6],64,...
-                        skipScalingList(&br, 64);
-                    }
+        temp = br.getBits(1);  // seq_scaling_matrix_present_flag
+        if(temp)
+        {
+            int32_t i;
+            for (i = 0; i < 6; i++) {
+		        temp = br.getBits(1); ;
+                if (temp) {
+                    read_scaling_list(&br, 0);
+                }
+            }
+	        for (i = 0; i < 2; i++) {
+		        temp = br.getBits(1); ;
+                if (temp) {
+                    read_scaling_list(&br, 1);
                 }
             }
         }
@@ -269,9 +279,9 @@ status_t getNextNALUnit(
     }
 
     size_t endOffset = offset - 2;
-    while (endOffset > startOffset + 1 && data[endOffset - 1] == 0x00) {
+  /*  while (endOffset > startOffset + 1 && data[endOffset - 1] == 0x00) {
         --endOffset;
-    }
+    }*/
 
     *nalStart = &data[startOffset];
     *nalSize = endOffset - startOffset;
@@ -496,6 +506,8 @@ sp<MetaData> MakeAACCodecSpecificData(
 
     meta->setData(kKeyESDS, 0, csd->data(), csd->size());
 
+	if(profile == 0)
+		meta->setInt32(kKeyIsLATM, true);
     return meta;
 }
 

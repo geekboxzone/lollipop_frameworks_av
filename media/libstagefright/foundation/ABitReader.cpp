@@ -33,6 +33,16 @@ ABitReader::~ABitReader() {
 void ABitReader::fillReservoir() {
     CHECK_GT(mSize, 0u);
 
+    if (mSize >= 4)
+    {
+        #define PACK_LE(x)      (((uint32_t)x[0] << 24)|((uint32_t)x[1] << 16)|((uint32_t)x[2] << 8)|((uint32_t)x[3]))
+        mReservoir = PACK_LE(mData);
+        mData += 4;
+        mSize -= 4;
+        mNumBitsLeft = 32;
+    }
+    else
+    {
     mReservoir = 0;
     size_t i;
     for (i = 0; mSize > 0 && i < 4; ++i) {
@@ -44,6 +54,7 @@ void ABitReader::fillReservoir() {
 
     mNumBitsLeft = 8 * i;
     mReservoir <<= 32 - mNumBitsLeft;
+    }
 }
 
 uint32_t ABitReader::getBits(size_t n) {
@@ -70,6 +81,39 @@ uint32_t ABitReader::getBits(size_t n) {
     return result;
 }
 
+uint32_t ABitReader::showBits(size_t n) {
+    CHECK_LE(n, 32u);
+    uint32_t result = 0;
+    if(n <= mNumBitsLeft)
+    {
+        result = (result << n) | (mReservoir >> (32 - n));
+    }
+    else
+    {
+        int m = n - mNumBitsLeft;
+        uint32_t temp = 0;
+        result = (result << mNumBitsLeft) | (mReservoir >> (32 - mNumBitsLeft));
+        if (mSize >= 4)
+        {
+            #define PACK_LE(x)      (((uint32_t)x[0] << 24)|((uint32_t)x[1] << 16)|((uint32_t)x[2] << 8)|((uint32_t)x[3]))
+            temp = PACK_LE(mData);
+        }
+        else
+        {
+            temp = 0;
+            uint8_t *mTempData =(uint8_t *)mData;
+            size_t i,j;
+            j = mSize;
+            for (i = 0; j > 0 && i < 4; ++i) {
+                temp = (temp << 8) | *mTempData;
+                ++mTempData;
+                j --;
+            }
+        }
+        result = (result << m) | (temp >> (32 - m));
+    }
+    return result;
+}
 void ABitReader::skipBits(size_t n) {
     while (n > 32) {
         getBits(32);
