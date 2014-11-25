@@ -7,7 +7,6 @@
 #include "include/AwesomePlayer.h"
 #include <sys/prctl.h>
 #include <dlfcn.h>  // for dlopen/dlclose
-#include "ppOp.h"
 
 #include <dlfcn.h>
 #include <cutils/properties.h>

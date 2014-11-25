@@ -2439,6 +2439,7 @@ void OMXCodec::on_message(const omx_message &msg) {
             if (info->mStatus != OWNED_BY_COMPONENT) {
                 ALOGW("We already own output buffer %u, yet received "
                      "a FILL_BUFFER_DONE.", buffer);
+                return;
             }
 
             info->mStatus = OWNED_BY_US;

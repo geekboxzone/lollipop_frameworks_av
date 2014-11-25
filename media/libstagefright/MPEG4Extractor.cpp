@@ -4821,7 +4821,7 @@ static bool BetterSniffMPEG4(
 
         char chunkstring[5];
         MakeFourCCString(chunkType, chunkstring);
-        ALOGE("saw chunk type %s, size %" PRIu64 " @ %lld", chunkstring, chunkSize, offset);
+        ALOGV("saw chunk type %s, size %" PRIu64 " @ %lld", chunkstring, chunkSize, offset);
         switch (chunkType) {
             case FOURCC('f', 't', 'y', 'p'):
             {
