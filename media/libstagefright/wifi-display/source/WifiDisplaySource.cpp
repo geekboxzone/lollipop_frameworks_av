@@ -588,6 +588,10 @@ status_t WifiDisplaySource::sendM3(int32_t sessionID) {
         "wfd_video_formats\r\n"
         "wfd_audio_codecs\r\n"
         "wfd_client_rtp_ports\r\n";
+    char val[PROPERTY_VALUE_MAX];
+    if (property_get("ro.wfd.enable_hdcp_encryption", val, NULL)
+                && (!strcasecmp("true", val)))
+        body.append("wfd_content_protection\r\n");
 
     AString request = "GET_PARAMETER rtsp://localhost/wfd1.0 RTSP/1.0\r\n";
     AppendCommonResponse(&request, mNextCSeq);
