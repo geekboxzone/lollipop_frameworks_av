@@ -633,6 +633,43 @@ void MediaProfiles::checkAndAddRequiredProfilesIfNecessary() {
         }
     }
 }
+//ddl ,multiple camera
+static int CameraGroupFound()
+{
+    int media_profiles_id=0,i,len,front_id=0,back_id=0;
+    char camera_link[30];
+    char camera_name[50];
+    char *ptr,*end;
+
+    for (i=0; i<2; i++) {
+        sprintf(camera_link,"/sys/dev/char/81:%d/device",i);
+        memset(camera_name,0x00,sizeof(camera_name));
+        len = readlink(camera_link,camera_name, sizeof(camera_name));
+        if (len > 0) {
+            if (strstr(camera_name,"front")) {
+                ptr = strstr(camera_name,"front");
+                ptr = strstr(ptr,"_");
+                if (ptr != NULL)
+                    front_id = strtol(ptr+1,&end,10);
+                else
+                    front_id = 0;
+            } else if (strstr(camera_name,"back")) {
+                ptr = strstr(camera_name,"back");
+                ptr = strstr(ptr,"_");
+                if (ptr != NULL)
+                    back_id = strtol(ptr+1,&end,10);
+                else 
+                    back_id = 0;
+            }
+
+            media_profiles_id |= ((back_id<<8) | front_id);
+        }
+    }
+    ALOGD("%s(%d): media_profiles_id: 0x%x",__FUNCTION__,__LINE__,media_profiles_id);
+    return media_profiles_id;
+}
+#define DEV_PATH0 "/dev/video0"
+#define DEV_PATH1 "/dev/video1"
 
 /*static*/ MediaProfiles*
 MediaProfiles::getInstance()
@@ -641,14 +678,75 @@ MediaProfiles::getInstance()
     Mutex::Autolock lock(sLock);
     if (!sIsInitialized) {
         char value[PROPERTY_VALUE_MAX];
-        if (property_get("media.settings.xml", value, NULL) <= 0) {
-            const char *defaultXmlFile = "/etc/media_profiles.xml";
-            FILE *fp = fopen(defaultXmlFile, "r");
-            if (fp == NULL) {
+        if (property_get("media.settings.xml", value, NULL) <= 0) {			
+            //ddl ,multiple camera
+            FILE *fp;
+			char defaultXmlFile[60];
+            char camerahal_value[PROPERTY_VALUE_MAX];
+			int camHal_0,camHal_1,camHal_2, ver=0;
+            int media_profiles_id;
+            int delay_s;
+
+            delay_s = 0;
+            do {
+			    property_get("sys_graphic.cam_hal.ver", camerahal_value, "0.0.0");	
+			    sscanf(camerahal_value,"%d.%d.%d" ,&camHal_0,&camHal_1,&camHal_2);
+			    ver = (camHal_0<<16)|(camHal_1<<8)|(camHal_2);            
+
+                if (ver == 0x00) {
+                    sleep(1);
+                    delay_s++;
+                }
+            } while((ver==0x00) && (delay_s<5));
+            
+            media_profiles_id = CameraGroupFound();
+			if(media_profiles_id==0){
+				defaultXmlFile[0]=0x00;
+				strcat(defaultXmlFile, "/etc/media_profiles.xml");
+			}else{
+				sprintf(defaultXmlFile,"/etc/media_profiles%d%d.xml",(media_profiles_id&0xff00)>>8,media_profiles_id&0xff);
+			}
+
+            delay_s=0;
+			int b = 0;
+			int a = 1/b;
+			fp = fopen(defaultXmlFile, "r");
+			if(fp==NULL){
+				memset(defaultXmlFile,0x00,sizeof(defaultXmlFile));
+                strcat(defaultXmlFile,"/data/camera/media_profiles.xml");
+				//1/0;
+
+                fp = fopen(defaultXmlFile, "r");
+                if(ver > 0x000333){
+                    while((delay_s<50) && (fp==NULL)) {
+                        sleep(1);
+                        delay_s++;
+                        fp = fopen(defaultXmlFile, "r");
+						if(fp == NULL)
+							ALOGE("OPEN ERROR %s",strerror(errno));
+                    }
+                    if (fp == NULL) {
+                        ALOGE("WARNING!!!! %s(%d): cameraHal version(%s) after(0.3.0x33),but don't have file(%s)",
+                                 __FUNCTION__,__LINE__,camerahal_value,defaultXmlFile);
+                    }
+                } else {
+                    if (fp == NULL)
+                        ALOGD("THIS IS RIGHT: %s(%d): cameraHal version(%s) before(0.3.33),so don't have file(%s)", 
+							    __FUNCTION__,__LINE__,camerahal_value,defaultXmlFile);
+                }
+                if (fp == NULL) {
+                    memset(defaultXmlFile,0x00,sizeof(defaultXmlFile));
+	                strcat(defaultXmlFile,"/etc/media_profiles.xml");
+	                fp = fopen(defaultXmlFile, "r");
+                }
+			}
+
+			if (fp == NULL) {
                 ALOGW("could not find media config xml file");
                 sInstance = createDefaultInstance();
             } else {
                 fclose(fp);  // close the file first.
+                ALOGD("%s(%d): Create instance from %s ",__FUNCTION__,__LINE__,defaultXmlFile);
                 sInstance = createInstanceFromXmlFile(defaultXmlFile);
             }
         } else {
