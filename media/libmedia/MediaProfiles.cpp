@@ -708,22 +708,17 @@ MediaProfiles::getInstance()
 			}
 
             delay_s=0;
-			int b = 0;
-			int a = 1/b;
 			fp = fopen(defaultXmlFile, "r");
 			if(fp==NULL){
 				memset(defaultXmlFile,0x00,sizeof(defaultXmlFile));
                 strcat(defaultXmlFile,"/data/camera/media_profiles.xml");
-				//1/0;
 
                 fp = fopen(defaultXmlFile, "r");
                 if(ver > 0x000333){
-                    while((delay_s<50) && (fp==NULL)) {
+                    while((delay_s<5) && (fp==NULL)) {
                         sleep(1);
                         delay_s++;
                         fp = fopen(defaultXmlFile, "r");
-						if(fp == NULL)
-							ALOGE("OPEN ERROR %s",strerror(errno));
                     }
                     if (fp == NULL) {
                         ALOGE("WARNING!!!! %s(%d): cameraHal version(%s) after(0.3.0x33),but don't have file(%s)",
