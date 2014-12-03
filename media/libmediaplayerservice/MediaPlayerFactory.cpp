@@ -30,6 +30,7 @@
 #include "TestPlayerStub.h"
 #include "StagefrightPlayer.h"
 #include "nuplayer/NuPlayerDriver.h"
+#include "ApePlayer.h"
 
 namespace android {
 
@@ -337,6 +338,45 @@ class TestPlayerFactory : public MediaPlayerFactory::IFactory {
     }
 };
 
+class ApePlayerFactory :
+    public MediaPlayerFactory::IFactory {
+  public:
+    virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                               int fd,
+                               int64_t offset,
+                               int64_t length,
+                               float /*curScore*/) {
+        ALOGV("-->ape factory in");
+        char buf[20];
+        lseek(fd, offset, SEEK_SET);
+        read(fd, buf, sizeof(buf));
+        lseek(fd, offset, SEEK_SET);
+        if(!memcmp("ID3", buf, 3))
+        {
+            size_t len =
+                    ((buf[6] & 0x7f) << 21)
+                    | ((buf[7] & 0x7f) << 14)
+                    | ((buf[8] & 0x7f) << 7)
+                    | (buf[9] & 0x7f);
+            len += 10;
+            lseek(fd, offset+len, SEEK_SET);
+            read(fd, buf, sizeof(buf));
+            lseek(fd, offset, SEEK_SET);
+        }
+        long ident = *((long*)buf);
+        if (ident == 0x2043414D)
+        {
+            ALOGV("it is ape file");
+            return 1.0;
+        }
+        ALOGV("it is not a ape file");
+        return 0.0;
+    }
+    virtual sp<MediaPlayerBase> createPlayer() {
+        ALOGI(" create ApePlayer");
+        return new ApePlayer();
+    }
+};
 void MediaPlayerFactory::registerBuiltinFactories() {
     Mutex::Autolock lock_(&sLock);
 
@@ -347,6 +387,7 @@ void MediaPlayerFactory::registerBuiltinFactories() {
     registerFactory_l(new NuPlayerFactory(), NU_PLAYER);
     registerFactory_l(new SonivoxPlayerFactory(), SONIVOX_PLAYER);
     registerFactory_l(new TestPlayerFactory(), TEST_PLAYER);
+    registerFactory_l(new ApePlayerFactory(),APE_PLAYER);
 
     sInitComplete = true;
 }

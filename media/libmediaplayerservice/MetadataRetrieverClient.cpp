@@ -84,6 +84,7 @@ static sp<MediaMetadataRetrieverBase> createRetriever(player_type playerType)
 {
     sp<MediaMetadataRetrieverBase> p;
     switch (playerType) {
+        case APE_PLAYER:
         case STAGEFRIGHT_PLAYER:
         case NU_PLAYER:
         {

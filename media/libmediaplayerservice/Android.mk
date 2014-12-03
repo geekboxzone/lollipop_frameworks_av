@@ -23,6 +23,7 @@ LOCAL_SRC_FILES:=               \
     StagefrightRecorder.cpp     \
     TestPlayerStub.cpp          \
     VideoFrameScheduler.cpp     \
+    ApePlayer.cpp               \
 
 LOCAL_SHARED_LIBRARIES :=       \
     libbinder                   \
@@ -42,12 +43,14 @@ LOCAL_SHARED_LIBRARIES :=       \
     libstagefright_wfd          \
     libutils                    \
     libvorbisidec               \
+    libapedec                   \
 
 LOCAL_STATIC_LIBRARIES :=       \
     libstagefright_nuplayer     \
     libstagefright_rtsp         \
 
 LOCAL_C_INCLUDES :=                                                 \
+    external/mac  \
     $(TOP)/frameworks/av/media/libstagefright/include               \
     $(TOP)/frameworks/av/media/libstagefright/rtsp                  \
     $(TOP)/frameworks/av/media/libstagefright/wifi-display          \
