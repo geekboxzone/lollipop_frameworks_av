@@ -92,7 +92,7 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/external/icu/icu4c/source/common \
         $(TOP)/external/icu/icu4c/source/i18n \
 	    $(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
-        $(TOP)/hardware/rk29/librkvpu 
+        $(TOP)/hardware/rockchip/librkvpu 
 
 LOCAL_SHARED_LIBRARIES := \
         libbinder \
