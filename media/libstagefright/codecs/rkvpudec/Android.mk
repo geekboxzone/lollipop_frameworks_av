@@ -14,7 +14,7 @@ LOCAL_C_INCLUDES := \
   	$(TOP)/frameworks/native/include/media/openmax \
   	$(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
     	$(TOP)/frameworks/av/media/libstagefright/libvpu/common \
-    	$(TOP)/hardware/rk29/librkvpu \
+    	$(TOP)/hardware/rockchip/librkvpu \
   
 LOCAL_CFLAGS := -DOSCL_IMPORT_REF= -DOSCL_UNUSED_ARG= -DOSCL_EXPORT_REF=
 

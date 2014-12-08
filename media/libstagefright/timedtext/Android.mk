@@ -17,7 +17,7 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/frameworks/av/media/libstagefright \
         $(TOP)/frameworks/av/media/libstagefright/libvpu/common \
         $(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
-		$(TOP)/hardware/rk29/librkvpu 
+		$(TOP)/hardware/rockchip/librkvpu 
 
 LOCAL_MODULE:= libstagefright_timedtext
 

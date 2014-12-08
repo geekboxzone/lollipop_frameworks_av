@@ -14,7 +14,7 @@ LOCAL_C_INCLUDES:= \
 		$(TOP)/frameworks/native/include/media/openmax \
 	$(TOP)/frameworks/av/media/libstagefright \
 	$(TOP)/frameworks/native/include/media/openmax \
-	$(TOP)/hardware/rk29/librkvpu
+	$(TOP)/hardware/rockchip/librkvpu
 
 
 LOCAL_MODULE:= libstagefright_mpeg2ts
