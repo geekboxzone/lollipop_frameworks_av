@@ -1504,11 +1504,11 @@ status_t AwesomePlayer::setNativeWindow_l(const sp<ANativeWindow> &native) {
         return err;
     }
 
-   /* if (mLastVideoTimeUs >= 0) {
+    if (mLastVideoTimeUs >= 0) {
         mSeeking = SEEK;
         mSeekTimeUs = mLastVideoTimeUs;
         modifyFlags((AT_EOS | AUDIO_AT_EOS | VIDEO_AT_EOS), CLEAR);
-    }*/
+    }
 
     if (wasPlaying) {
         play_l();
