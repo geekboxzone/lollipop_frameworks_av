@@ -27,13 +27,6 @@ LOCAL_SRC_FILES := \
  	src/pvmp3_seek_synch.cpp \
  	src/pvmp3_stereo_proc.cpp \
  	src/pvmp3_reorder.cpp \
- 	src/bit.cpp\
- 	src/frame.cpp\
- 	src/synth.cpp\
- 	src/stream.cpp\
- 	src/output.cpp\
- 	src/fixed.cpp\
- 	src/layer12.cpp
 
 ifeq ($(TARGET_ARCH),arm)
 LOCAL_SRC_FILES += \

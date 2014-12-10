@@ -49,9 +49,6 @@
 
 #include "pvmp3_audio_type_defs.h"
 #include "pvmp3_dec_defs.h"
-#include "frame.h"
-#include "stream.h"
-#include "synth.h"
 
 /*----------------------------------------------------------------------------
 ; MACROS
@@ -237,9 +234,6 @@ extern "C"
 
         int16       *pOutputBuffer;
 
-		struct mad_frame frame;
-		struct mad_stream stream;
-		struct mad_synth synth;
     } tPVMP3DecoderExternal;
 
 uint32 pvmp3_decoderMemRequirements(void);
