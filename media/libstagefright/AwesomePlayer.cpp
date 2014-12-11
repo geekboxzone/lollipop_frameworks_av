@@ -2080,15 +2080,29 @@ void AwesomePlayer::onVideoEvent() {
         mTimeSourceDeltaUs = estimateRealTimeUs(ts, systemTimeUs) - timeUs;
     }
 
-    int64_t realTimeUs, mediaTimeUs;
+    /*int64_t realTimeUs, mediaTimeUs;
     if (!(mFlags & AUDIO_AT_EOS) && mAudioPlayer != NULL
         && mAudioPlayer->getMediaTimeMapping(&realTimeUs, &mediaTimeUs)) {
-        ALOGV("updating TSdelta (%" PRId64 " => %" PRId64 " change %" PRId64 ")",
+        ALOGD("updating TSdelta (%" PRId64 " => %" PRId64 " change %" PRId64 ") realTimeUs %" PRId64 " mediaTimeUs %" PRId64 " ",
               mTimeSourceDeltaUs, realTimeUs - mediaTimeUs,
-              mTimeSourceDeltaUs - (realTimeUs - mediaTimeUs));
+              mTimeSourceDeltaUs - (realTimeUs - mediaTimeUs), realTimeUs, mediaTimeUs);
         ATRACE_INT("TS delta change (ms)", (mTimeSourceDeltaUs - (realTimeUs - mediaTimeUs)) / 1E3);
         mTimeSourceDeltaUs = realTimeUs - mediaTimeUs;
+    }*/
+    int64_t nowUs = ALooper::GetNowUs() - mTimeSourceDeltaUs;
+    int64_t realTimeUs, pmediaTimeUs;
+    int64_t mediaTimeUs = nowUs;
+
+    if (!(mFlags & AUDIO_AT_EOS) && mAudioPlayer != NULL
+		&& mAudioPlayer->getMediaTimeMapping(&realTimeUs, &pmediaTimeUs)) {
+	    mediaTimeUs = mAudioPlayer->getRealTimeUs();
+		mediaTimeUs = mediaTimeUs - realTimeUs + pmediaTimeUs;
+    }else {
+		mediaTimeUs = 0;
     }
+
+    if(mediaTimeUs <= 0)
+	    mediaTimeUs = nowUs;
 
   /*  if (wasSeeking == SEEK_VIDEO_ONLY) {
         int64_t nowUs = estimateRealTimeUs(ts, systemTimeUs) - mTimeSourceDeltaUs;
