@@ -371,7 +371,7 @@ static int reset_vpu_mem_pool(vpu_display_mem_pool *p)
     INIT_LIST_HEAD(&p_mempool->free_list);
     INIT_LIST_HEAD(&p_mempool->used_list);
 
-    p_mempool->buff_size = 0;
+    p_mempool->buff_size = -1;
 
     pthread_mutex_unlock(&p_mempool->list_mutex);
     MBLK_DBG("reset vpu memory pool success\n");
