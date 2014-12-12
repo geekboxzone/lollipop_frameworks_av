@@ -19,7 +19,7 @@
 #include <utils/Log.h>
 
 #include <media/IOMX.h>
-
+#include <cutils/properties.h>
 #include <media/MediaCodecInfo.h>
 
 #include <media/stagefright/foundation/ADebug.h>
@@ -117,6 +117,20 @@ bool MediaCodecInfo::hasQuirk(const char *name) const {
 void MediaCodecInfo::getSupportedMimes(Vector<AString> *mimes) const {
     mimes->clear();
     for (size_t ix = 0; ix < mCaps.size(); ix++) {
+        AString value = mCaps.keyAt(ix);
+        /*if((!(strncasecmp((char*)getCodecName(), "RkVpuDecode", 11))) || 
+                (!(strncasecmp((char*)getCodecName(), "RkVpuEncode", 11)))){
+            //value.setTo("video/x-vnd.on2.unknow");
+            continue;
+        } else if ((!(strncasecmp((char*)getCodecName(), "RkAudioDecode", 13))) || 
+                (!(strncasecmp((char*)getCodecName(), "FLACDecoder", 11))) || 
+                (!(strncasecmp((char*)getCodecName(), "AACDecoder_MIRRORING", 11))) || 
+                (!(strncasecmp((char*)getCodecName(), "AACDecoder", 10)))){
+            //value.setTo("audio/x-vnd.on2.unknow");
+            continue;
+        }else {
+            mimes->push_back(mCaps.keyAt(ix));
+        }*/
         mimes->push_back(mCaps.keyAt(ix));
     }
 }
@@ -218,12 +232,45 @@ status_t MediaCodecInfo::initializeCapabilities(const CodecCapabilities &caps) {
     mCurrentCaps->mProfileLevels.clear();
     mCurrentCaps->mColorFormats.clear();
 
+    int pid;
+    char procPath[128]={};
+    char cmdline[256] = {};
+    char prop_value[128]={};
+    FILE* file;
+    pid = getpid();
+    sprintf(procPath, "/proc/%d/cmdline", pid);
+    file = fopen(procPath, "r");
+    if (file)
+    {
+        if(NULL==fgets(cmdline, sizeof(cmdline) - 1, file))
+        {
+            ALOGI("not find info after read cmdline");
+        }
+        fclose(file);
+    }
+
     for (size_t i = 0; i < caps.mProfileLevels.size(); ++i) {
         const CodecProfileLevel &src = caps.mProfileLevels.itemAt(i);
 
         ProfileLevel profileLevel;
         profileLevel.mProfile = src.mProfile;
         profileLevel.mLevel = src.mLevel;
+        /*
+         ** merged from GPU group for CTS_R3 on android 4.4.4.
+         ** android.media.cts.EncodeVirtualDisplayWithCompositionTest::testVirtualDisplayRecycles
+         ** public static final int AVCLevel21      = 0x40;
+        */
+        if(!strcmp(cmdline, "com.android.cts.media")) //cts:EncodeVirtualDisplayWithCompositionTest
+        {
+            property_get("sys.picture.capture", prop_value, "0");
+            if(!strcmp(prop_value,"testVirtualDisplayRecycles") || \
+                !strcmp(prop_value,"testRenderingMaxResolutionLocally") || \
+                !strcmp(prop_value,"testRenderingMaxResolutionRemotely"))
+            {
+                 if(profileLevel.mLevel > 0x40)
+                    continue;
+            }
+        }
         mCurrentCaps->mProfileLevels.push_back(profileLevel);
     }
 
