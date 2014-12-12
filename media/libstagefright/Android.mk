@@ -84,15 +84,12 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/external/tremolo \
         $(TOP)/frameworks/av/include/media/stagefright \
         $(TOP)/frameworks/av/media/libstagefright/include \
-        $(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
-        $(TOP)/frameworks/av/media/libstagefright/libvpu/common \
         $(TOP)/external/openssl/include \
         $(TOP)/external/libvpx/libwebm \
         $(TOP)/system/netd/include \
         $(TOP)/external/icu/icu4c/source/common \
         $(TOP)/external/icu/icu4c/source/i18n \
-	    $(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
-        $(TOP)/hardware/rockchip/librkvpu 
+        $(TOP)/hardware/rockchip/librkvpu\
 
 LOCAL_SHARED_LIBRARIES := \
         libbinder \
