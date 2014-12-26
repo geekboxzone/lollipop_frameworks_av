@@ -683,12 +683,20 @@ MediaProfiles::getInstance()
             FILE *fp;
 			char defaultXmlFile[60];
             char camerahal_value[PROPERTY_VALUE_MAX];
+            char camerahal_vendor[PROPERTY_VALUE_MAX];
 			int camHal_0,camHal_1,camHal_2, ver=0;
             int media_profiles_id;
             int delay_s;
+            bool autoXml=false;
 
             delay_s = 0;
             do {
+                property_get("sys_graphic.cam_hal.vendor", camerahal_vendor, "Invalidate");
+                if (strcmp(camerahal_vendor,"Intel-sofia")==0) {
+                    autoXml = false;
+                    ALOGD("CameraHal is %s,  break!!",camerahal_vendor);
+                    break;
+                }
 			    property_get("sys_graphic.cam_hal.ver", camerahal_value, "0.0.0");	
 			    sscanf(camerahal_value,"%d.%d.%d" ,&camHal_0,&camHal_1,&camHal_2);
 			    ver = (camHal_0<<16)|(camHal_1<<8)|(camHal_2);            
@@ -696,45 +704,52 @@ MediaProfiles::getInstance()
                 if (ver == 0x00) {
                     sleep(1);
                     delay_s++;
+                    ALOGD("Delay for CameraHal: %d s!",delay_s);
                 }
             } while((ver==0x00) && (delay_s<5));
-            
-            media_profiles_id = CameraGroupFound();
-			if(media_profiles_id==0){
-				defaultXmlFile[0]=0x00;
-				strcat(defaultXmlFile, "/etc/media_profiles.xml");
-			}else{
-				sprintf(defaultXmlFile,"/etc/media_profiles%d%d.xml",(media_profiles_id&0xff00)>>8,media_profiles_id&0xff);
-			}
 
-            delay_s=0;
-			fp = fopen(defaultXmlFile, "r");
-			if(fp==NULL){
-				memset(defaultXmlFile,0x00,sizeof(defaultXmlFile));
-                strcat(defaultXmlFile,"/data/camera/media_profiles.xml");
+            if (autoXml==true) {                
+                media_profiles_id = CameraGroupFound();
+    			if(media_profiles_id==0){
+    				defaultXmlFile[0]=0x00;
+    				strcat(defaultXmlFile, "/etc/media_profiles.xml");
+    			}else{
+    				sprintf(defaultXmlFile,"/etc/media_profiles%d%d.xml",(media_profiles_id&0xff00)>>8,media_profiles_id&0xff);
+    			}
 
-                fp = fopen(defaultXmlFile, "r");
-                if(ver > 0x000333){
-                    while((delay_s<5) && (fp==NULL)) {
-                        sleep(1);
-                        delay_s++;
-                        fp = fopen(defaultXmlFile, "r");
+                delay_s=0;
+    			fp = fopen(defaultXmlFile, "r");
+    			if(fp==NULL){
+    				memset(defaultXmlFile,0x00,sizeof(defaultXmlFile));
+                    strcat(defaultXmlFile,"/data/camera/media_profiles.xml");
+
+                    fp = fopen(defaultXmlFile, "r");
+                    if(ver > 0x000333){
+                        while((delay_s<5) && (fp==NULL)) {
+                            sleep(1);
+                            delay_s++;
+                            fp = fopen(defaultXmlFile, "r");
+                        }
+                        if (fp == NULL) {
+                            ALOGE("WARNING!!!! %s(%d): cameraHal version(%s) after(0.3.0x33),but don't have file(%s)",
+                                     __FUNCTION__,__LINE__,camerahal_value,defaultXmlFile);
+                        }
+                    } else {
+                        if (fp == NULL)
+                            ALOGD("THIS IS RIGHT: %s(%d): cameraHal version(%s) before(0.3.33),so don't have file(%s)", 
+    							    __FUNCTION__,__LINE__,camerahal_value,defaultXmlFile);
                     }
                     if (fp == NULL) {
-                        ALOGE("WARNING!!!! %s(%d): cameraHal version(%s) after(0.3.0x33),but don't have file(%s)",
-                                 __FUNCTION__,__LINE__,camerahal_value,defaultXmlFile);
+                        memset(defaultXmlFile,0x00,sizeof(defaultXmlFile));
+    	                strcat(defaultXmlFile,"/etc/media_profiles.xml");
+    	                fp = fopen(defaultXmlFile, "r");
                     }
-                } else {
-                    if (fp == NULL)
-                        ALOGD("THIS IS RIGHT: %s(%d): cameraHal version(%s) before(0.3.33),so don't have file(%s)", 
-							    __FUNCTION__,__LINE__,camerahal_value,defaultXmlFile);
-                }
-                if (fp == NULL) {
-                    memset(defaultXmlFile,0x00,sizeof(defaultXmlFile));
-	                strcat(defaultXmlFile,"/etc/media_profiles.xml");
-	                fp = fopen(defaultXmlFile, "r");
-                }
-			}
+    			}
+            } else {
+                memset(defaultXmlFile,0x00,sizeof(defaultXmlFile));
+                strcat(defaultXmlFile,"/etc/media_profiles.xml");
+                fp = fopen("/etc/media_profiles.xml", "r");
+            }
 
 			if (fp == NULL) {
                 ALOGW("could not find media config xml file");
