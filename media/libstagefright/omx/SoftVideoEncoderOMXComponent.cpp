@@ -279,6 +279,7 @@ const uint8_t *SoftVideoEncoderOMXComponent::extractGraphicBuffer(
             ConvertFlexYUVToPlanar(dst, dstStride, dstVStride, &ycbcr, width, height);
             break;
         case HAL_PIXEL_FORMAT_RGBA_8888:
+        case HAL_PIXEL_FORMAT_RGBX_8888: 
         case HAL_PIXEL_FORMAT_BGRA_8888:
             ConvertRGB32ToPlanar(
                     dst, dstStride, dstVStride,
