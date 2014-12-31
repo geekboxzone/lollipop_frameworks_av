@@ -542,6 +542,7 @@ status_t AwesomePlayer::setDataSource_l(const sp<MediaExtractor> &extractor) {
             }
             setVideoSource(extractor->getTrack(i));
             haveVideo = true;
+            mActiveVideoTrackIndex = i;
 
             // Set the presentation/display size
             int32_t displayWidth, displayHeight;
@@ -629,6 +630,8 @@ void AwesomePlayer::reset() {
 void AwesomePlayer::reset_l() {
     mVideoRenderingStarted = false;
     mActiveAudioTrackIndex = -1;
+    mActiveTextTrackIndex = -1;
+    mActiveVideoTrackIndex = -1;
     mDisplayWidth = 0;
     mDisplayHeight = 0;
 
@@ -2957,7 +2960,7 @@ status_t AwesomePlayer::selectTrack(size_t trackIndex, bool select) {
         const char *mime;
         CHECK(meta->findCString(kKeyMIMEType, &mime));
         isAudioTrack = !strncasecmp(mime, "audio/", 6);
-
+        ALOGV("======mime:%s==========",mime);
         if (!isAudioTrack &&
             (strcasecmp(mime, MEDIA_MIMETYPE_TEXT_3GPP) != 0) &&
             (strcasecmp(mime, MEDIA_MIMETYPE_TEXT_MATROSKA_UTF8) != 0) &&
@@ -2990,12 +2993,14 @@ status_t AwesomePlayer::selectTrack(size_t trackIndex, bool select) {
                 mTextDriver->start();
                 modifyFlags(TEXT_RUNNING, SET);
             }
+            mActiveTextTrackIndex = trackIndex;
         }
     } else {
         err = mTextDriver->unselectTrack(trackIndex);
         if (err == OK) {
             modifyFlags(TEXTPLAYER_INITIALIZED, CLEAR);
             modifyFlags(TEXT_RUNNING, CLEAR);
+            mActiveTextTrackIndex = -1;
         }
     }
     return err;
@@ -3081,6 +3086,24 @@ status_t AwesomePlayer::invoke(const Parcel &request, Parcel *reply) {
             int trackIndex = request.readInt32();
             return selectTrack(trackIndex, false /* select */);
         }
+        case INVOKE_ID_GET_SELECTED_TRACK:
+        {
+            int32_t type = request.readInt32();
+            ssize_t index = -1;
+            switch(type) {
+                case MEDIA_TRACK_TYPE_VIDEO:
+                    index = mActiveVideoTrackIndex;
+                    break;
+                case MEDIA_TRACK_TYPE_AUDIO:
+                    index = mActiveAudioTrackIndex;
+                    break;
+                case MEDIA_TRACK_TYPE_TIMEDTEXT:
+                    index = mActiveTextTrackIndex;
+                    break;
+            }
+            reply->writeInt32(index);
+            return OK;
+        }
         case KEY_PARAMETER_TIMED_TEXT_FRAME_DURATION_MS:
         {
             if (mTextDriver) {
@@ -3091,6 +3114,7 @@ status_t AwesomePlayer::invoke(const Parcel &request, Parcel *reply) {
         }
         default:
         {
+            ALOGE("===========methodId:%d,%s,not support========",methodId,__FUNCTION__);
             return ERROR_UNSUPPORTED;
         }
     }
