@@ -25,6 +25,7 @@
 #include <media/stagefright/Utils.h>
 #include <utils/String8.h>
 #include <byteswap.h>
+//#define ADD_RKUTF8
 
 namespace android {
 
@@ -543,7 +544,9 @@ void ID3::Iterator::getstring(String8 *id, bool otherdata) const {
             return;
         }
 
-        convertISO8859ToString8(frameData, mFrameSize, id);
+        // this is supposed to be ISO-8859-1, but pass it up as-is to the caller, who will figure
+        // out the real encoding
+        id->setTo((const char*)frameData, mFrameSize);
         return;
     }
 
@@ -564,89 +567,127 @@ void ID3::Iterator::getstring(String8 *id, bool otherdata) const {
 //		n = 0;
 
     if (encoding == 0x00) {
-        // ISO 8859-1
-        convertISO8859ToString8(frameData + 1, n, id);
+        // supposedly ISO 8859-1
+        id->setTo((const char*)frameData + 1, n);
     } else if (encoding == 0x03) {
         // UTF-8
+#ifdef ADD_RKUTF8
 		String8 value("rkutf8");
 		value.append((const char *)(frameData + 1), n);
-        id->setTo(value.string(),n+6);
-    } else if (encoding == 0x02) {
-        // UTF-16 BE, no byte order mark.
-        // API wants number of characters, not number of bytes...
-        int len = n / 2;
-        int rklen = len + 6;//need add rkutf8 tag
-        char16_t *rkframedata = new char16_t[rklen];
-        const char16_t *framedata = (const char16_t *) (frameData + 1);
-        char16_t *framedatacopy = NULL;
-#if BYTE_ORDER == LITTLE_ENDIAN
-        framedatacopy = new char16_t[len];
-        for (int i = 0; i < len; i++) {
-            framedatacopy[i] = bswap_16(framedata[i]);
-        }
-        framedata = framedatacopy;
+		id->setTo(value.string(),n+6);
+#else
+		id->setTo((const char *)(frameData + 1), n);
 #endif
-        rkframedata[0]='r';
-        rkframedata[1]='k';
-        rkframedata[2]='u';
-        rkframedata[3]='t';
-        rkframedata[4]='f';
-        rkframedata[5]='8';
-        memcpy(rkframedata+6,framedata, len*sizeof(char16_t));
-        id->setTo(rkframedata, rklen);
-        if (framedatacopy != NULL) {
-            delete[] framedatacopy;
-        }
-        if(rkframedata)
-        	 delete[]rkframedata;
-    } else {
-        // UCS-2
-        // API wants number of characters, not number of bytes...
-        int len = n / 2;
-        const char16_t *framedata = (const char16_t *) (frameData + 1);
-        char16_t *framedatacopy = NULL;
+	} else if (encoding == 0x02) {
+		// UTF-16 BE, no byte order mark.
+		// API wants number of characters, not number of bytes...
+		int len = n / 2;
+#ifdef ADD_RKUTF8
+		int rklen = len + 6;//need add rkutf8 tag
+		char16_t *rkframedata = new char16_t[rklen];
+#endif
+		const char16_t *framedata = (const char16_t *) (frameData + 1);
+		char16_t *framedatacopy = NULL;
+#if BYTE_ORDER == LITTLE_ENDIAN
+		framedatacopy = new char16_t[len];
+		for (int i = 0; i < len; i++) {
+			framedatacopy[i] = bswap_16(framedata[i]);
+		}
+		framedata = framedatacopy;
+#endif
+#ifdef ADD_RKUTF8
+		rkframedata[0]='r';
+		rkframedata[1]='k';
+		rkframedata[2]='u';
+		rkframedata[3]='t';
+		rkframedata[4]='f';
+		rkframedata[5]='8';
+		memcpy(rkframedata+6,framedata, len*sizeof(char16_t));
+		id->setTo(rkframedata, rklen);
+		if (framedatacopy != NULL) {
+			delete[] framedatacopy;
+		}
+		if(rkframedata)
+			delete[]rkframedata;
+#else
+		id->setTo(framedata, len);
+		if (framedatacopy != NULL) {
+			delete[] framedatacopy;
+		}
+#endif
+	} else if (encoding == 0x01) {
+		// UCS-2
+		// API wants number of characters, not number of bytes...
+		int len = n / 2;
+		const char16_t *framedata = (const char16_t *) (frameData + 1);
+		char16_t *framedatacopy = NULL;
 		bool isUCS2 = false;
-        if (*framedata == 0xfffe) {
+		if (*framedata == 0xfffe) {
 			isUCS2 = true;
-            // endianness marker doesn't match host endianness, convert
-            framedatacopy = new char16_t[len];
-            for (int i = 0; i < len; i++) {
-                framedatacopy[i] = bswap_16(framedata[i]);
-            }
-            framedata = framedatacopy;
-        }
-        // If the string starts with an endianness marker, skip it
-        if (*framedata == 0xfeff) {
+			// endianness marker doesn't match host endianness, convert
+			framedatacopy = new char16_t[len];
+			for (int i = 0; i < len; i++) {
+				framedatacopy[i] = bswap_16(framedata[i]);
+			}
+			framedata = framedatacopy;
+		}
+		// If the string starts with an endianness marker, skip it
+		if (*framedata == 0xfeff) {
 			isUCS2 = true;
-            framedata++;
-            len--;
-        }
-        char16_t *rkframedata = NULL;
-				if(isUCS2){
-							int rklen = len + 6;//need add rkutf8 tag
-							rkframedata = new char16_t[rklen];
-							int index = 0;
-							if(framedata == framedatacopy)
-							{
-								index = 1;
-								rkframedata[0] = 0xfffe;
-							}
-							rkframedata[index+0]='r';
-			        rkframedata[index+1]='k';
-			        rkframedata[index+2]='u';
-			        rkframedata[index+3]='t';
-			        rkframedata[index+4]='f';
-			        rkframedata[index+5]='8';
-			        memcpy(rkframedata+6+index,framedata+index, (len-index)*sizeof(char16_t));
-        			id->setTo(rkframedata, rklen);
-				}else//if not is UCS-2, fixed it ISO8859
-						convertISO8859ToString8(frameData + 1, n, id);
+			framedata++;
+			len--;
+		}
+#ifdef ADD_RKUTF8
+		char16_t *rkframedata = NULL;
+		if(isUCS2){
+			int rklen = len + 6;//need add rkutf8 tag
+			rkframedata = new char16_t[rklen];
+			int index = 0;
+			if(framedata == framedatacopy)
+			{
+				index = 1;
+				rkframedata[0] = 0xfffe;
+			}
+			rkframedata[index+0]='r';
+			rkframedata[index+1]='k';
+			rkframedata[index+2]='u';
+			rkframedata[index+3]='t';
+			rkframedata[index+4]='f';
+			rkframedata[index+5]='8';
+			memcpy(rkframedata+6+index,framedata+index, (len-index)*sizeof(char16_t));
+			id->setTo(rkframedata, rklen);
+		}else//if not is UCS-2, fixed it ISO8859
+			convertISO8859ToString8(frameData + 1, n, id);
+		if(rkframedata != NULL){
+			delete[] rkframedata;
+		}
+#else
+
+		// check if the resulting data consists entirely of 8-bit values
+		bool eightBit = true;
+		for (int i = 0; i < len; i++) {
+			if (framedata[i] > 0xff) {
+				eightBit = false;
+				break;
+			}
+		}
+		if (eightBit) {
+			// collapse to 8 bit, then let the media scanner client figure out the real encoding
+			char *frame8 = new char[len];
+			for (int i = 0; i < len; i++) {
+				frame8[i] = framedata[i];
+			}
+			id->setTo(frame8, len);
+			delete [] frame8;
+		} else {
+			id->setTo(framedata, len);
+		}
+#endif
+
         if (framedatacopy != NULL) {
             delete[] framedatacopy;
         }
-        if(rkframedata != NULL){
-        		delete[] rkframedata;
-        }
+        
     }
 }
 
