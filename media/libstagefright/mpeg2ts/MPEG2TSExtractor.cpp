@@ -1118,7 +1118,8 @@ void MPEG2TSExtractor::init() {
         if(!haveVideo) {
             unsigned mAudioElementaryPID = 0;
             sp<AnotherPacketSource> impl =
-                (AnotherPacketSource *)mParser->getSource(ATSParser::AUDIO,mAudioProgramID,mAudioElementaryPID).get();
+                (AnotherPacketSource *)mParser->getSource(
+                        ATSParser::AUDIO,mAudioProgramID,mAudioElementaryPID).get();
 
             if (impl != NULL) {
                 impl->mElementaryPID = mAudioElementaryPID;
@@ -1131,9 +1132,10 @@ void MPEG2TSExtractor::init() {
                 }
                 mParser->mPIDbuffer.push(mAudioElementaryPID);
                 mSourceImpls.push(impl);
-            }
             mType = GPU_STRM;
-            //return;
+            }else{
+                return;
+            }
         }
     }
     if(!mType)

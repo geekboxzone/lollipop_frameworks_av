@@ -179,6 +179,7 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
         int64_t frameTimeUs,
         int seekMode) {
 
+    int softwareDec = 0;
     sp<MetaData> format = source->getFormat();
 	format->setInt32(kKeyThumbnailDec,1);
 
@@ -197,6 +198,9 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
    	format->findCString(kKeyMIMEType, &mime);
     if(!strcmp(mime,"video/hevc")){
         frameTimeUs = 0;
+    }
+    if(!strcmp(mime,"video/x-vnd.on2.vp9")){
+        softwareDec = 1;
     }
 
     if (decoder.get() == NULL) {
@@ -247,7 +251,7 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
     err = decoder->read(&buffer);
 
     if (buffer != NULL) {
-       if(buffer->range_length() > 0){
+       if((buffer->range_length() > 0) && (!softwareDec)){
            buffer->releaseframe();
        }else{
            buffer->release();
@@ -303,7 +307,11 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
         ALOGV("video frame is unreadable, decoder does not give us access "
              "to the video data.");
 
+        if((buffer->range_length() > 0) && (!softwareDec)){
         buffer->releaseframe();
+        }else{
+           buffer->release();
+        }
         buffer = NULL;
 
         decoder->stop();

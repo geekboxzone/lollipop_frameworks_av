@@ -4059,7 +4059,7 @@ MPEG4_NEXT_SAMPLE:
         ssize_t num_bytes_read = 0;
         int32_t drm = 0;
 
-#ifdef HEVC_DEC_USE_SOFTWARE
+#if 1//def HEVC_DEC_USE_SOFTWARE
         num_bytes_read = mDataSource->readAt(offset, mSrcBuffer, size);
 
         if (num_bytes_read < (ssize_t)size) {

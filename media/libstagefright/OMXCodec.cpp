@@ -465,7 +465,7 @@ status_t OMXCodec::parseHEVCCodecSpecificData(
     const uint8_t *ptr = (const uint8_t *)data;
 
     // verify minimum size and configurationVersion == 1.
-    if (size < 7 || ptr[0] != 1) {
+    if (size < 7) {
         return ERROR_MALFORMED;
     }
 
@@ -514,6 +514,11 @@ status_t OMXCodec::parseAVCCodecSpecificData(
         const void *data, size_t size,
         unsigned *profile, unsigned *level) {
     const uint8_t *ptr = (const uint8_t *)data;
+    if((size > 4)&& (ptr[0] == 0) && (ptr[1] == 0)
+        && (ptr[2] ==0) && (ptr[3] == 0x01)){
+        addCodecSpecificData(ptr, size);
+        return OK;
+    }
 
     // verify minimum size and configurationVersion == 1.
     if (size < 7 || ptr[0] != 1) {
@@ -627,16 +632,15 @@ status_t OMXCodec::configureCodec(const sp<MetaData> &meta) {
 
             unsigned profile, level;
             status_t err;
-           /* if ((err = parseHEVCCodecSpecificData(
+            if ((err = parseHEVCCodecSpecificData(
                             data, size, &profile, &level)) != OK) {
                 ALOGE("Malformed HEVC codec specific data.");
                 return err;
             }
-
             CODEC_LOGI(
                     "HEVC profile = %u , level = %u",
-                    profile, level);*/
-            addCodecSpecificData(data, size);
+                    profile, level);
+
         } else if (meta->findData(kKeyVorbisInfo, &type, &data, &size)) {
             addCodecSpecificData(data, size);
 
@@ -1944,23 +1948,11 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
     crop.top = 0;
     crop.right = def.format.video.nFrameWidth & (~3); //if no 4 aglin crop csy
     crop.bottom = def.format.video.nFrameHeight;
-    if(!strcmp(mComponentName,"OMX.rk.video_decoder.hevc")){
-        hevcFlag = true;
-        ALOGV("is hevc decoder");
-    }
-    int bufWidth = def.format.video.nFrameWidth;
-    int bufHeight = def.format.video.nFrameHeight;
-    if(hevcFlag){
-        bufWidth = ((bufWidth + 255)&(~255))|(256);
-        bufHeight = ((bufHeight + 7)&(~7));
-    }else{
-        bufWidth = ((bufWidth + 15)&(~15));
-        bufHeight = ((bufHeight + 15)&(~15));
-    }
+
     err = native_window_set_buffers_geometry(
             mNativeWindow.get(),
-            bufWidth,
-            bufHeight,
+            def.format.video.nStride,
+            def.format.video.nSliceHeight,
             def.format.video.eColorFormat);
 
     if (err != 0) {
@@ -3237,7 +3229,8 @@ bool OMXCodec::drainInputBuffer(BufferInfo *info) {
 
         size_t size = specific->mSize;
 
-        if ((!strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mMIME))
+        if ((!strcasecmp(MEDIA_MIMETYPE_VIDEO_AVC, mMIME) ||
+             !strcasecmp(MEDIA_MIMETYPE_VIDEO_HEVC, mMIME))
                 && !(mQuirks & kWantsNALFragments)) {
             static const uint8_t kNALStartCode[4] =
                     { 0x00, 0x00, 0x00, 0x01 };

@@ -635,24 +635,11 @@ status_t ACodec::configureOutputBuffersFromNativeWindow(
     crop.top = 0;
     crop.right = def.format.video.nFrameWidth & (~3); //if no 4 aglin crop csy
     crop.bottom = def.format.video.nFrameHeight;
-    if(!strcmp(mComponentName.c_str(),"OMX.rk.video_decoder.hevc")){
-        hevcFlag = true;
-        ALOGV("is hevc decoder");
-    }
-    int bufWidth = def.format.video.nFrameWidth;
-    int bufHeight = def.format.video.nFrameHeight;
-    if(hevcFlag){
-        bufWidth = ((bufWidth + 255)&(~255))|(256);
-        bufHeight = ((bufHeight + 7)&(~7));
-    }else{
-        bufWidth = ((bufWidth + 15)&(~15));
-        bufHeight = ((bufHeight + 15)&(~15));
-    }
 
     err = native_window_set_buffers_geometry(
             mNativeWindow.get(),
-        bufWidth,
-        bufHeight,
+            def.format.video.nStride,
+            def.format.video.nSliceHeight,
             def.format.video.eColorFormat);
 
     if (err != 0) {
