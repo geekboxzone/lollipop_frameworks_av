@@ -696,7 +696,9 @@ MediaProfiles::getInstance()
                     autoXml = false;
                     ALOGD("CameraHal is %s,  break!!",camerahal_vendor);
                     break;
-                }
+                }else{
+					autoXml = true;
+				}
 			    property_get("sys_graphic.cam_hal.ver", camerahal_value, "0.0.0");	
 			    sscanf(camerahal_value,"%d.%d.%d" ,&camHal_0,&camHal_1,&camHal_2);
 			    ver = (camHal_0<<16)|(camHal_1<<8)|(camHal_2);            
