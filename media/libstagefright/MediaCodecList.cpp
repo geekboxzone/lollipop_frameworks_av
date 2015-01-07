@@ -34,7 +34,6 @@
 #include <utils/threads.h>
 
 #include <libexpat/expat.h>
-
 namespace android {
 
 static Mutex sInitMutex;
@@ -834,11 +833,17 @@ status_t MediaCodecList::addFeature(const char **attrs) {
 }
 
 ssize_t MediaCodecList::findCodecByName(const char *name) const {
+    size_t skip = 0;
     for (size_t i = 0; i < mCodecInfos.size(); ++i) {
         const MediaCodecInfo &info = *mCodecInfos.itemAt(i).get();
-
+        AString tmp = info.mName;
+        if( tmp.startsWith("RkVpuDecoder") || tmp.startsWith("RkAudioDecoder")
+                || tmp.startsWith("FLACDecoder")|| tmp.startsWith("RkVpuEncoder")
+                || tmp.startsWith("AACDecoder")){
+            skip++;
+        }
         if (info.mName == name) {
-            return i;
+            return (i-skip);
         }
     }
 
