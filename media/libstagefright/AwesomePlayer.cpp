@@ -2085,7 +2085,7 @@ void AwesomePlayer::onVideoEvent() {
 
     int64_t realTimeUs, mediaTimeUs;
     if (!(mFlags & AUDIO_AT_EOS) && mAudioPlayer != NULL
-        && mAudioPlayer->getMediaTimeMapping(&realTimeUs, &mediaTimeUs) && mediaTimeUs) {
+        && mAudioPlayer->getMediaTimeMapping(&realTimeUs, &mediaTimeUs)) {
         ALOGV("updating TSdelta (%" PRId64 " => %" PRId64 " change %" PRId64 ")",
               mTimeSourceDeltaUs, realTimeUs - mediaTimeUs,
               mTimeSourceDeltaUs - (realTimeUs - mediaTimeUs));
