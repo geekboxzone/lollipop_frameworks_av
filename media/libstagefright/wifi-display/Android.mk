@@ -18,6 +18,9 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/frameworks/av/media/libstagefright \
         $(TOP)/frameworks/native/include/media/openmax \
         $(TOP)/frameworks/av/media/libstagefright/mpeg2ts \
+	$(TOP)/hardware/rockchip/librkvpu \
+	$(TOP)/hardware/rockchip/libgralloc \
+	$(TOP)/frameworks/av/media/libstagefright/include \
 
 LOCAL_SHARED_LIBRARIES:= \
         libbinder                       \
@@ -29,6 +32,7 @@ LOCAL_SHARED_LIBRARIES:= \
         libstagefright_foundation       \
         libui                           \
         libutils                        \
+	libvpu                          \
 
 LOCAL_MODULE:= libstagefright_wfd
 
