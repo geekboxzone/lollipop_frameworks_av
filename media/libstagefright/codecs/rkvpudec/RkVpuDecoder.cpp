@@ -188,12 +188,54 @@ int RkVpuDecoder::getExtraData(int code_mode){
         case HEVC_MODE:
         {
             if ((meta->findData(kKeyHVCC, &type, &data, &size)) && size) {
-               mExtraData = (uint8_t*)malloc(size);
+                mExtraData = (uint8_t*)malloc(size);
+                mExtraDataSize = 0;
+                static const uint8_t kNALStartCode[4] =
+                { 0x00, 0x00, 0x00, 0x01 };
+
                 if(!mExtraData){
                     ALOGE("mExtraData malloc fail");
                 }
-                mExtraDataSize= size;
-                memcpy(mExtraData,data,mExtraDataSize);
+                const uint8_t *ptr = (const uint8_t *)data;
+                // verify minimum size and configurationVersion == 1.
+                if (size < 7) {
+                    return ERROR_MALFORMED;
+                }
+
+                ptr += 22;
+                size -= 22;
+
+                size_t numofArrays = (char)ptr[0];
+                ptr += 1;
+                size -= 1;
+                size_t j = 0, i = 0;
+                for (i = 0; i < numofArrays; i++) {
+                    ptr += 1;
+                    size -= 1;
+                    // Num of nals
+                    size_t numofNals = U16_AT(ptr);
+                    ptr += 2;
+                    size -= 2;
+
+                    for (j = 0;j < numofNals;j++) {
+                        if (size < 2) {
+                            return ERROR_MALFORMED;
+                        }
+                        size_t length = U16_AT(ptr);
+                        ptr += 2;
+                        size -= 2;
+                        if (size < length) {
+                            return ERROR_MALFORMED;
+                        }
+
+                        memcpy(mExtraData+mExtraDataSize,kNALStartCode, 4);
+                        mExtraDataSize += 4;
+                        memcpy(mExtraData+mExtraDataSize,ptr,length);
+                        ptr += length;
+                        size -= length;
+                        mExtraDataSize += length;
+                    }
+                }
             }
             break;
         }
