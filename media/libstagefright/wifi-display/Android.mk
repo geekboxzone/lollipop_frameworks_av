@@ -36,6 +36,10 @@ LOCAL_SHARED_LIBRARIES:= \
 
 LOCAL_MODULE:= libstagefright_wfd
 
+ifeq ($(strip $(GRAPHIC_MEMORY_PROVIDER)),dma_buf)
+LOCAL_CFLAGS += -DUSE_DMA_BUF
+endif
+
 LOCAL_MODULE_TAGS:= optional
 
 include $(BUILD_SHARED_LIBRARY)
