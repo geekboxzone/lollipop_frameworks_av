@@ -220,7 +220,7 @@ status_t RepeaterSource::read(
 #if ASYNC_RGA
             {
                 mBuffer->add_ref();
-                *buffer = new MediaBuffer(28);
+                *buffer = new MediaBuffer(24);
                 char *data = (char *)(*buffer)->data();
                 uint32_t temp = 0x1234;
                 buffer_handle_t handle = (buffer_handle_t)*((long*)(mBuffer->data()+4));
