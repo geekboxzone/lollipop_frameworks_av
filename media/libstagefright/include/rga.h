@@ -1,3 +1,20 @@
+/*
+ * Copyright 2013 Rockchip Electronics Co. LTD
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 #ifndef _RGA_DRIVER_H_
 #define _RGA_DRIVER_H_
 
@@ -27,7 +44,7 @@
 
 /* RGA process mode enum */
 enum
-{    
+{
     bitblt_mode               = 0x0,
     color_palette_mode        = 0x1,
     color_fill_mode           = 0x2,
@@ -56,7 +73,7 @@ enum
 
 
 /* RGA rotate mode */
-enum 
+enum
 {
     rotate_mode0             = 0x0,     /* no rotate */
     rotate_mode1             = 0x1,     /* rotate    */
@@ -72,7 +89,7 @@ enum
     color_palette_mode3      = 0x3,     /* 8K */
 };
 
-enum 
+enum
 {
     BB_BYPASS   = 0x0,     /* no rotate */
     BB_ROTATE   = 0x1,     /* rotate    */
@@ -80,7 +97,7 @@ enum
     BB_Y_MIRROR = 0x3      /* y_mirror  */
 };
 
-enum 
+enum
 {
     nearby   = 0x0,     /* no rotate */
     bilinear = 0x1,     /* rotate    */
@@ -92,13 +109,13 @@ enum
 
 
 /*
-//          Alpha    Red     Green   Blue  
-{  4, 32, {{32,24,   8, 0,  16, 8,  24,16 }}, GGL_RGBA },   // RK_FORMAT_RGBA_8888    
-{  4, 24, {{ 0, 0,   8, 0,  16, 8,  24,16 }}, GGL_RGB  },   // RK_FORMAT_RGBX_8888    
+//          Alpha    Red     Green   Blue
+{  4, 32, {{32,24,   8, 0,  16, 8,  24,16 }}, GGL_RGBA },   // RK_FORMAT_RGBA_8888
+{  4, 24, {{ 0, 0,   8, 0,  16, 8,  24,16 }}, GGL_RGB  },   // RK_FORMAT_RGBX_8888
 {  3, 24, {{ 0, 0,   8, 0,  16, 8,  24,16 }}, GGL_RGB  },   // RK_FORMAT_RGB_888
 {  4, 32, {{32,24,  24,16,  16, 8,   8, 0 }}, GGL_BGRA },   // RK_FORMAT_BGRA_8888
-{  2, 16, {{ 0, 0,  16,11,  11, 5,   5, 0 }}, GGL_RGB  },   // RK_FORMAT_RGB_565        
-{  2, 16, {{ 1, 0,  16,11,  11, 6,   6, 1 }}, GGL_RGBA },   // RK_FORMAT_RGBA_5551    
+{  2, 16, {{ 0, 0,  16,11,  11, 5,   5, 0 }}, GGL_RGB  },   // RK_FORMAT_RGB_565
+{  2, 16, {{ 1, 0,  16,11,  11, 6,   6, 1 }}, GGL_RGBA },   // RK_FORMAT_RGBA_5551
 {  2, 16, {{ 4, 0,  16,12,  12, 8,   8, 4 }}, GGL_RGBA },   // RK_FORMAT_RGBA_4444
 {  3, 24, {{ 0, 0,  24,16,  16, 8,   8, 0 }}, GGL_BGR  },   // RK_FORMAT_BGB_888
 
@@ -113,40 +130,40 @@ typedef enum _Rga_SURF_FORMAT
     RK_FORMAT_RGBA_5551    = 0x5,
     RK_FORMAT_RGBA_4444    = 0x6,
     RK_FORMAT_BGR_888      = 0x7,
-    
-    RK_FORMAT_YCbCr_422_SP = 0x8,    
-    RK_FORMAT_YCbCr_422_P  = 0x9,    
-    RK_FORMAT_YCbCr_420_SP = 0xa,    
+
+    RK_FORMAT_YCbCr_422_SP = 0x8,
+    RK_FORMAT_YCbCr_422_P  = 0x9,
+    RK_FORMAT_YCbCr_420_SP = 0xa,
     RK_FORMAT_YCbCr_420_P  = 0xb,
 
-    RK_FORMAT_YCrCb_422_SP = 0xc,    
-    RK_FORMAT_YCrCb_422_P  = 0xd,    
-    RK_FORMAT_YCrCb_420_SP = 0xe,    
+    RK_FORMAT_YCrCb_422_SP = 0xc,
+    RK_FORMAT_YCrCb_422_P  = 0xd,
+    RK_FORMAT_YCrCb_420_SP = 0xe,
     RK_FORMAT_YCrCb_420_P  = 0xf,
-    
+
     RK_FORMAT_BPP1         = 0x10,
     RK_FORMAT_BPP2         = 0x11,
     RK_FORMAT_BPP4         = 0x12,
     RK_FORMAT_BPP8         = 0x13,
-    RK_FORMAT_UNKNOWN       = 0x100, 
+    RK_FORMAT_UNKNOWN       = 0x100,
 }RgaSURF_FORMAT;
-    
-    
+
+
 typedef struct rga_img_info_t
 {
     unsigned int yrgb_addr;      /* yrgb    mem addr         */
     unsigned int uv_addr;        /* cb/cr   mem addr         */
     unsigned int v_addr;         /* cr      mem addr         */
     unsigned int format;         //definition by RK_FORMAT
-    
+
     unsigned short act_w;
     unsigned short act_h;
     unsigned short x_offset;
     unsigned short y_offset;
-    
+
     unsigned short vir_w;
     unsigned short vir_h;
-    
+
     unsigned short endian_mode; //for BPP
     unsigned short alpha_swap;
 }
@@ -182,8 +199,8 @@ typedef struct RECT
 {
     unsigned short xmin;
     unsigned short xmax; // width - 1
-    unsigned short ymin; 
-    unsigned short ymax; // height - 1 
+    unsigned short ymin;
+    unsigned short ymax; // height - 1
 } RECT;
 
 typedef struct RGB
@@ -242,25 +259,25 @@ line_draw_t;
 
 
 
- struct rga_req { 
+ struct rga_req {
     unsigned char render_mode;            /* (enum) process mode sel */
-    
+
     rga_img_info_t src;                   /* src image info */
     rga_img_info_t dst;                   /* dst image info */
     rga_img_info_t pat;             /* patten image info */
 
     unsigned int rop_mask_addr;         /* rop4 mask addr */
     unsigned int LUT_addr;              /* LUT addr */
-    
+
     RECT clip;                      /* dst clip window default value is dst_vir */
                                     /* value from [0, w-1] / [0, h-1]*/
-        
+
     int sina;                   /* dst angle  default value 0  16.16 scan from table */
-    int cosa;                   /* dst angle  default value 0  16.16 scan from table */        
+    int cosa;                   /* dst angle  default value 0  16.16 scan from table */
 
     unsigned short alpha_rop_flag;        /* alpha rop process flag           */
                                     /* ([0] = 1 alpha_rop_enable)       */
-                                    /* ([1] = 1 rop enable)             */                                                                                                                
+                                    /* ([1] = 1 rop enable)             */
                                     /* ([2] = 1 fading_enable)          */
                                     /* ([3] = 1 PD_enable)              */
                                     /* ([4] = 1 alpha cal_mode_sel)     */
@@ -268,32 +285,32 @@ line_draw_t;
                                     /* ([6] = 1 gradient fill mode sel) */
                                     /* ([7] = 1 AA_enable)              */
 
-    unsigned char  scale_mode;            /* 0 nearst / 1 bilnear / 2 bicubic */                             
-                            
+    unsigned char  scale_mode;            /* 0 nearst / 1 bilnear / 2 bicubic */
+
     unsigned int color_key_max;         /* color key max */
-    unsigned int color_key_min;         /* color key min */     
+    unsigned int color_key_min;         /* color key min */
 
     unsigned int fg_color;              /* foreground color */
     unsigned int bg_color;              /* background color */
 
     COLOR_FILL gr_color;            /* color fill use gradient */
-    
+
     line_draw_t line_draw_info;
-    
+
     FADING fading;
-                              
+
     unsigned char PD_mode;                /* porter duff alpha mode sel */
-    
+
     unsigned char alpha_global_value;     /* global alpha value */
-     
+
     unsigned short rop_code;              /* rop2/3/4 code  scan from rop code table*/
-    
+
     unsigned char bsfilter_flag;          /* [2] 0 blur 1 sharp / [1:0] filter_type*/
-    
+
     unsigned char palette_mode;           /* (enum) color palatte  0/1bpp, 1/2bpp 2/4bpp 3/8bpp*/
 
-    unsigned char yuv2rgb_mode;           /* (enum) BT.601 MPEG / BT.601 JPEG / BT.709  */ 
-    
+    unsigned char yuv2rgb_mode;           /* (enum) BT.601 MPEG / BT.601 JPEG / BT.709  */
+
     unsigned char endian_mode;            /* 0/big endian 1/little endian*/
 
     unsigned char rotate_mode;            /* (enum) rotate mode  */
@@ -303,7 +320,7 @@ line_draw_t;
                                     /* 0x3,     y_mirror   */
 
     unsigned char color_fill_mode;        /* 0 solid color / 1 patten color */
-                                    
+
     MMU mmu_info;                   /* mmu information */
 
     unsigned char  alpha_rop_mode;        /* ([0~1] alpha mode)       */
@@ -313,17 +330,17 @@ line_draw_t;
 
     unsigned char  src_trans_mode;
 
-    unsigned char CMD_fin_int_enable;                        
+    unsigned char CMD_fin_int_enable;
 
     /* completion is reported through a callback */
 	void (*complete)(int retval);
 };
 
-#if 0    
+#if 0
 typedef struct TILE_INFO
 {
     int64_t matrix[4];
-    
+
     uint16_t tile_x_num;     /* x axis tile num / tile size is 8x8 pixel */
     uint16_t tile_y_num;     /* y axis tile num */
 
@@ -347,9 +364,9 @@ typedef struct TILE_INFO
     int32_t y_dy;
 
     mdp_img_act dst_ctrl;
-    
+
 }
-TILE_INFO;	
+TILE_INFO;
 #endif
 
 #if 0
@@ -404,7 +421,7 @@ TILE_INFO;
 #define RGA_DST_VIR_INFO         0x150
 
 #define RGA_DST_CTR_INFO         0x154
-#define RGA_LINE_DRAW_XY_INFO    0x154  //repeat 
+#define RGA_LINE_DRAW_XY_INFO    0x154  //repeat
 
 //Alpha/ROP Registers
 #define RGA_ALPHA_CON            0x158
@@ -474,14 +491,14 @@ RGA_set_dst_vir_info(
 		unsigned char  a_swap_en
 		);
 
-int 
+int
 RGA_set_pat_info(
     struct rga_req *msg,
     unsigned int width,
     unsigned int height,
     unsigned int x_off,
     unsigned int y_off,
-    unsigned int pat_format    
+    unsigned int pat_format
     );
 
 
@@ -491,14 +508,14 @@ RGA_set_rop_mask_info(
 		unsigned int rop_mask_addr,
 		unsigned int rop_mask_endian_mode
 		);
-   
+
 int RGA_set_alpha_en_info(
 		struct rga_req *msg,
 		unsigned int  alpha_cal_mode,    /* 0:alpha' = alpha + (alpha>>7) | alpha' = alpha */
 		unsigned int  alpha_mode,        /* 0 global alpha / 1 per pixel alpha / 2 mix mode */
 		unsigned int  global_a_value,
-		unsigned int  PD_en,             /* porter duff alpha mode en */ 
-		unsigned int  PD_mode, 
+		unsigned int  PD_en,             /* porter duff alpha mode en */
+		unsigned int  PD_mode,
 		unsigned int  dst_alpha_en );    /* use dst alpha  */
 
 int
@@ -510,7 +527,7 @@ RGA_set_rop_en_info(
 		unsigned int solid_color
 		);
 
- 
+
 int
 RGA_set_fading_en_info(
 		struct rga_req *msg,
@@ -536,11 +553,11 @@ RGA_set_src_trans_mode_info(
 int
 RGA_set_bitblt_mode(
 		struct rga_req *msg,
-		unsigned char scale_mode,    // 0/near  1/bilnear  2/bicubic  
-		unsigned char rotate_mode,   // 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror 
-		unsigned int  angle,         // rotate angle     
-		unsigned int  dither_en,     // dither en flag   
-		unsigned int  AA_en,         // AA flag          
+		unsigned char scale_mode,    // 0/near  1/bilnear  2/bicubic
+		unsigned char rotate_mode,   // 0/copy 1/rotate_scale 2/x_mirror 3/y_mirror
+		unsigned int  angle,         // rotate angle
+		unsigned int  dither_en,     // dither en flag
+		unsigned int  AA_en,         // AA flag
 		unsigned int  yuv2rgb_mode
 		);
 
@@ -563,7 +580,7 @@ RGA_set_color_fill_mode(
     	unsigned char  cf_mode,                  /* patten fill or solid fill   */
 		unsigned int color,                      /* solid color                 */
 		unsigned short pat_width,                /* pattern width               */
-		unsigned short pat_height,               /* pattern height              */   
+		unsigned short pat_height,               /* pattern height              */
 		unsigned char pat_x_off,                 /* pattern x offset            */
 		unsigned char pat_y_off,                 /* pattern y offset            */
 		unsigned char aa_en                      /* alpha en                    */

@@ -1,20 +1,19 @@
 /*
- *  Bit stream reader
- *  Copyright (C) 2007 Andreas Öman
+ * Copyright 2013 Rockchip Electronics Co. LTD
  *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 
 /**
  * changelog:
@@ -130,29 +129,29 @@ void flush_put_bits(bitstream_t *bs)
 /**
  * for pes parser
  */
-int getu16(unsigned char **b, size_t *l) 		
+int getu16(unsigned char **b, size_t *l)
 {
-  unsigned short x = ((*b)[0] << 8 | (*b)[1]);		
-  *b+=2;						
-  *l-=2;						
-  return x;						
+  unsigned short x = ((*b)[0] << 8 | (*b)[1]);
+  *b+=2;
+  *l-=2;
+  return x;
 }
 
-int getu8(unsigned char **b, size_t *l) 		
+int getu8(unsigned char **b, size_t *l)
 {
-  unsigned char x = (*b)[0];				
-  *b+=1;						
-  *l-=1;						
-  return x;						
+  unsigned char x = (*b)[0];
+  *b+=1;
+  *l-=1;
+  return x;
 }
 
-int64_t getpts(unsigned char **b, size_t *l) 		
+int64_t getpts(unsigned char **b, size_t *l)
 {
-  int64_t _pts;						
-  _pts = (int64_t)((getu8(b, l) >> 1) & 0x07) << 30;	
-  _pts |= (int64_t)(getu16(b, l) >> 1) << 15;		
-  _pts |= (int64_t)(getu16(b, l) >> 1);			
-  return _pts;							
+  int64_t _pts;
+  _pts = (int64_t)((getu8(b, l) >> 1) & 0x07) << 30;
+  _pts |= (int64_t)(getu16(b, l) >> 1) << 15;
+  _pts |= (int64_t)(getu16(b, l) >> 1);
+  return _pts;
 }
 
 
@@ -181,7 +180,7 @@ int show_bits(bitstream_t *bs, int num)
 
 		offset++;
 	}
-	
+
   return r;
 }
 
