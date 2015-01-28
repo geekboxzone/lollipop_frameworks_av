@@ -1,6 +1,19 @@
-//
-//
-//
+/*
+ * Copyright 2013 Rockchip Electronics Co. LTD
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 #ifndef _APE_GET_FILE_INFO_
 #define _APE_GET_FILE_INFO_
@@ -93,21 +106,21 @@ struct WAVE_HEADER
   // RIFF header
   ape_char cRIFFHeader[4];//20070528 fixed
   ape_uint32 nRIFFBytes;
-  
+
   // data type
   ape_char cDataTypeID[4];//20070528 fixed
-  
+
   // wave format
   ape_char cFormatHeader[4];//20070528 fixed
   ape_uint32 nFormatBytes;
-  
+
   ape_uint16 nFormatTag;
   ape_uint16 nChannels;
   ape_uint32 nSamplesPerSec;
   ape_uint32 nAvgBytesPerSec;
   ape_uint16 nBlockAlign;
   ape_uint16 nBitsPerSample;
-  
+
   // data chunk header
   ape_char cDataHeader[4];//20070528 fixed
   ape_uint32 nDataBytes;
@@ -126,7 +139,7 @@ struct APE_COMMON_HEADER
 /*****************************************************************************************
 APE header structure for old APE files (3.97 and earlier)
 *****************************************************************************************/
-struct APE_HEADER_OLD 
+struct APE_HEADER_OLD
 {
     ape_char cID[4];                            // should equal 'MAC '
     ape_uint16 nVersion;                        // version number * 1000 (3.81 = 3810)
@@ -148,7 +161,7 @@ struct APE_DESCRIPTOR
   ape_char    cID[4];                             // should equal 'MAC '//20070528 fixed
   ape_uint16  nVersion;                           // version number * 1000 (3.81 = 3810)
   ape_uint16  tmp;
-  
+
   ape_uint32  nDescriptorBytes;                   // the number of descriptor bytes (allows later expansion of this header)
   ape_uint32  nHeaderBytes;                       // the number of header APE_HEADER bytes
   ape_uint32  nSeekTableBytes;                    // the number of bytes of the seek table
@@ -156,7 +169,7 @@ struct APE_DESCRIPTOR
   ape_uint32  nAPEFrameDataBytes;                 // the number of bytes of APE frame data
   ape_uint32  nAPEFrameDataBytesHigh;             // the high order number of APE frame data bytes
   ape_uint32  nTerminatingDataBytes;              // the terminating data of the file (not including tag data)
-  
+
   //uint8   cFileMD5[16];                       // the MD5 hash of the file (see notes for usage... it's a littly tricky)
   ape_uchar cFileMD5[16];//20070528 fixed
   //ape_uchar cFileMD5[8];//20070528 fixed
@@ -164,7 +177,7 @@ struct APE_DESCRIPTOR
 
 
 /*****************************************************************************************
-APE_FILE_INFO - structure which describes most aspects of an APE file 
+APE_FILE_INFO - structure which describes most aspects of an APE file
 (used internally for speed and ease)
 *****************************************************************************************/
 struct APE_FILE_INFO
@@ -191,7 +204,7 @@ struct APE_FILE_INFO
   ape_int32 nDecompressedBitrate;                       // the kbps of the decompressed audio (i.e. 1440 kpbs for CD audio)
   ape_int32 nJunkHeaderBytes;                           // used for ID3v2, etc.
   ape_int32 nSeekTableElements;                         // the number of elements in the seek table(s)
-  
+
   /*Mod by Wei.Hisung 2007.03.06*/
   ape_uint32* spSeekByteTable;              // the seek table (byte)
   ape_uchar* spSeekBitTable;        // the seek table (bits -- legacy)
@@ -206,11 +219,11 @@ struct APE_HEADER
 {
 	ape_uint16    nCompressionLevel;                 // the compression level (see defines I.E. COMPRESSION_LEVEL_FAST)
 	ape_uint16    nFormatFlags;                      // any format flags (for future use)
-	
+
 	ape_uint32    nBlocksPerFrame;                   // the number of audio blocks in one frame
 	ape_uint32    nFinalFrameBlocks;                 // the number of audio blocks in the final frame
 	ape_uint32    nTotalFrames;                      // the total number of frames
-	
+
 	ape_uint16    nBitsPerSample;                    // the bits per sample (typically 16)
 	ape_uint16    nChannels;                         // the number of channels (1 or 2)
 	ape_uint32    nSampleRate;                       // the sample rate (typically 44100)
