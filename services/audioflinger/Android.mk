@@ -75,6 +75,10 @@ else
     LOCAL_CFLAGS += -DANDROID_SMP=0
 endif
 
+ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
+	LOCAL_CFLAGS += -DSOFIA_FMR
+endif 
+
 LOCAL_CFLAGS += -fvisibility=hidden
 
 include $(BUILD_SHARED_LIBRARY)

@@ -80,7 +80,12 @@ enum {
     RELEASE_AUDIO_PATCH,
     LIST_AUDIO_PATCHES,
     SET_AUDIO_PORT_CONFIG,
-    GET_AUDIO_HW_SYNC
+    GET_AUDIO_HW_SYNC,
+#ifdef SOFIA_FMR
+    // PEKALL FMR begin:
+    SET_FM_VOLUME,
+    // PEKALL FMR end
+#endif //SOFIA_FMR
 };
 
 class BpAudioFlinger : public BpInterface<IAudioFlinger>
@@ -895,6 +900,18 @@ public:
         }
         return (audio_hw_sync_t)reply.readInt32();
     }
+#ifdef SOFIA_FMR
+	// PEKALL FMR begin:
+    virtual status_t setFmVolume(float volume)
+    {
+        Parcel data, reply;
+        data.writeInterfaceToken(IAudioFlinger::getInterfaceDescriptor());
+        data.writeFloat(volume);
+        remote()->transact(SET_FM_VOLUME, data, &reply);
+        return reply.readInt32();
+    }
+    // PEKALL FMR end
+#endif //SIFIA_FMR
 };
 
 IMPLEMENT_META_INTERFACE(AudioFlinger, "android.media.IAudioFlinger");
@@ -1362,6 +1379,16 @@ status_t BnAudioFlinger::onTransact(
             reply->writeInt32(getAudioHwSyncForSession((audio_session_t)data.readInt32()));
             return NO_ERROR;
         } break;
+#ifdef SOFIA_FMR
+		// PEKALL FMR begin:
+        case SET_FM_VOLUME: {
+            CHECK_INTERFACE(IAudioFlinger, data, reply);
+            float volume = data.readFloat();
+            reply->writeInt32(setFmVolume(volume));
+            return NO_ERROR;
+        } break;
+        // PEKALL FMR end
+#endif//SOFIA_FMR
         default:
             return BBinder::onTransact(code, data, reply, flags);
     }

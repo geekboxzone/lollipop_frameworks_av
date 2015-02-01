@@ -48,6 +48,13 @@ public:
     static const char * const keyFrameCount;
     static const char * const keyInputSource;
     static const char * const keyScreenState;
+#ifdef SOFIA_FMR
+    // PEKALL FMR begin:
+    static const char * const keyFmOn;
+    static const char * const keyFmOff;
+    static const char * const keyFmVolume;
+    // PEKALL FMR end
+#endif//SOFIA_FMR
 
     String8 toString();
 

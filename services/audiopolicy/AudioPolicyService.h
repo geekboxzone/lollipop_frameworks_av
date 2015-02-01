@@ -197,7 +197,11 @@ public:
             void doOnAudioPortListUpdate();
             void onAudioPatchListUpdate();
             void doOnAudioPatchListUpdate();
-
+#ifdef SOFIA_FMR
+            // PEKALL FMR begin:
+            virtual status_t setFmVolume(float volume, int delayMs = 0);
+            // PEKALL FMR end
+#endif //SOFIA_FMR
 private:
                         AudioPolicyService() ANDROID_API;
     virtual             ~AudioPolicyService();
@@ -228,6 +232,11 @@ private:
             UPDATE_AUDIOPORT_LIST,
             UPDATE_AUDIOPATCH_LIST,
             SET_AUDIOPORT_CONFIG,
+#ifdef SOFIA_FMR
+            // PEKALL FMR begin:
+            SET_FM_VOLUME
+            // PEKALL FMR end
+#endif //SOFIA_FMR
         };
 
         AudioCommandThread (String8 name, const wp<AudioPolicyService>& service);
@@ -264,7 +273,11 @@ private:
                     status_t    setAudioPortConfigCommand(const struct audio_port_config *config,
                                                           int delayMs);
                     void        insertCommand_l(AudioCommand *command, int delayMs = 0);
-
+#ifdef SOFIA_FMR
+                    // PEKALL FMR begin:
+                    status_t    fmVolumeCommand(float volume, int delayMs = 0);
+                    // PEKALL FMR end
+#endif //SOFIA_FMR
     private:
         class AudioCommandData;
 
@@ -344,7 +357,14 @@ private:
         public:
             struct audio_port_config mConfig;
         };
-
+#ifdef SOFIA_FMR
+        // PEKALL FMR begin:
+        class FmVolumeData : public AudioCommandData{
+        public:
+            float mVolume;
+        };
+        // PEKALL FMR end
+#endif //SOFIA_FMR
         Mutex   mLock;
         Condition mWaitWorkCV;
         Vector < sp<AudioCommand> > mAudioCommands; // list of pending commands
@@ -430,7 +450,11 @@ private:
 
         // set down link audio volume.
         virtual status_t setVoiceVolume(float volume, int delayMs = 0);
-
+#ifdef SOFIA_FMR
+        // PEKALL FMR begin
+        status_t setFmVolume(float volume, int delayMs = 0);
+        // PEKALL FMR end
+#endif //SOFIA_FMR
         // move effect to the specified output
         virtual status_t moveEffects(int session,
                                          audio_io_handle_t srcOutput,

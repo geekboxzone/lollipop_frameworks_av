@@ -37,6 +37,10 @@ LOCAL_SHARED_LIBRARIES += \
     libaudiopolicymanager
 endif
 
+ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
+	LOCAL_CFLAGS += -DSOFIA_FMR
+endif 
+
 LOCAL_STATIC_LIBRARIES := \
     libmedia_helper \
     libserviceutility
@@ -63,6 +67,10 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_STATIC_LIBRARIES := \
     libmedia_helper
+    
+ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
+	LOCAL_CFLAGS += -DSOFIA_FMR
+endif 
 
 LOCAL_MODULE:= libaudiopolicymanagerdefault
 

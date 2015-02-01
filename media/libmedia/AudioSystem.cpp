@@ -406,7 +406,21 @@ status_t AudioSystem::setVoiceVolume(float value)
     if (af == 0) return PERMISSION_DENIED;
     return af->setVoiceVolume(value);
 }
-
+#ifdef SOFIA_FMR
+// PEKALL FMR begin:
+status_t AudioSystem::setFmVolume(float value)
+{
+	//fixed me, It's just let fm work normally.
+	value= 1.0;
+	ALOGV("setFmVolume: %f", value);
+	ALOGE("Shenyu: setFmVolume(%f)", value);
+	
+    const sp<IAudioFlinger>& af = AudioSystem::get_audio_flinger();
+    if (af == 0) return PERMISSION_DENIED;
+    return af->setFmVolume(value);
+}
+// PEKALL FMR end
+#endif//SOFIA_FMR
 status_t AudioSystem::getRenderPosition(audio_io_handle_t output, uint32_t *halFrames,
                                         uint32_t *dspFrames)
 {

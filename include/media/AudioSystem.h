@@ -123,7 +123,11 @@ public:
         audio_channel_mask_t channelMask, size_t* buffSize);
 
     static status_t setVoiceVolume(float volume);
-
+#ifdef SOFIA_FMR
+    // PEKALL FMR begin:
+    static status_t setFmVolume(float volume);
+    // PEKALL FMR end
+#endif//SOFIA_FMR
     // return the number of audio frames written by AudioFlinger to audio HAL and
     // audio dsp to DAC since the specified output I/O handle has exited standby.
     // returned status (from utils/Errors.h) can be:
