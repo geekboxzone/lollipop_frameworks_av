@@ -63,6 +63,8 @@ status_t MediaPlayerFactory::registerFactory_l(IFactory* factory,
 
 static player_type getDefaultPlayerType() {
     char value[PROPERTY_VALUE_MAX];
+    char prop_value[100];
+    property_get("sys.cts.capture", prop_value, "0");
     if (property_get("media.stagefright.use-awesome", value, NULL)
             && (!strcmp("1", value) || !strcasecmp("true", value))) {
         return STAGEFRIGHT_PLAYER;
@@ -74,7 +76,14 @@ static player_type getDefaultPlayerType() {
         return STAGEFRIGHT_PLAYER;
     }
 
-    return STAGEFRIGHT_PLAYER;
+    if (!strcmp(prop_value,"test_S0P0") || !strcmp(prop_value,"test_S1P000005")
+        || !strcmp(prop_value,"test_S2P00001") || !strcmp(prop_value,"test_S3P00001") 
+        || !strcmp(prop_value,"test_S4P00001") || !strcmp(prop_value,"test_S5P00001")
+        || !strcmp(prop_value,"test_S6P00002")){
+        return NU_PLAYER;
+    }else{
+        return STAGEFRIGHT_PLAYER;
+    }
 }
 
 status_t MediaPlayerFactory::registerFactory(IFactory* factory,
