@@ -88,6 +88,10 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_MODULE:= libaudiopolicymanager
 
+ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
+        LOCAL_CFLAGS += -DSOFIA_FMR
+endif
+
 include $(BUILD_SHARED_LIBRARY)
 
 endif
