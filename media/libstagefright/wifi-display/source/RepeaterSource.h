@@ -16,7 +16,7 @@ namespace android {
 // if necessary.
 struct RepeaterSource : public MediaSource,
                        public MediaBufferObserver {
-    RepeaterSource(const sp<MediaSource> &source, double rateHz, int width, int height);
+    RepeaterSource(const sp<MediaSource> &source, double rateHz);
 
     virtual status_t start(MetaData *params);
     virtual status_t stop();

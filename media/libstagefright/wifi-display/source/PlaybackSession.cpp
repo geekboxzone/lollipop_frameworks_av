@@ -1040,7 +1040,7 @@ status_t WifiDisplaySource::PlaybackSession::addVideoSource(
     source->setUseAbsoluteTimestamps();
 
     sp<RepeaterSource> videoSource =
-        new RepeaterSource(source, framesPerSecond, width, height);
+        new RepeaterSource(source, framesPerSecond);
 
     size_t numInputBuffers;
     status_t err = addSource(

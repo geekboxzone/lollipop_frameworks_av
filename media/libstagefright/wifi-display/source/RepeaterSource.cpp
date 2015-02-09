@@ -22,7 +22,7 @@ namespace android {
 
 FILE* omx_txt;
 
-RepeaterSource::RepeaterSource(const sp<MediaSource> &source, double rateHz, int width, int height)
+RepeaterSource::RepeaterSource(const sp<MediaSource> &source, double rateHz)
     : mStarted(false),
       mSource(source),
       mRateHz(rateHz),
@@ -35,8 +35,8 @@ RepeaterSource::RepeaterSource(const sp<MediaSource> &source, double rateHz, int
       rga_fd(-1),
       vpu_mem_index(0),
       mNumPendingBuffers(0),
-      mWidth(width),
-      mHeight(height) {
+      mWidth(0),
+      mHeight(0) {
 }
 
 RepeaterSource::~RepeaterSource() {
@@ -72,9 +72,12 @@ status_t RepeaterSource::start(MetaData *params) {
     }
 
 #if ASYNC_RGA
+    CHECK(mSource->getFormat()->findInt32(kKeyWidth, &mWidth));
+    CHECK(mSource->getFormat()->findInt32(kKeyHeight, &mHeight));
     rga_fd  = open("/dev/rga",O_RDWR,0);
     if(rga_fd < 0)
     {
+        ALOGE("Rga device open failed!");
         return rga_fd;
     }
     for(int i = 0; i < maxbuffercount; i++)
