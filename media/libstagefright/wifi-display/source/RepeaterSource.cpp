@@ -36,11 +36,21 @@ RepeaterSource::RepeaterSource(const sp<MediaSource> &source, double rateHz)
       vpu_mem_index(0),
       mNumPendingBuffers(0),
       mWidth(0),
-      mHeight(0) {
+      mHeight(0),
+      mRGBAFile(NULL) {
+#ifdef RGBA_TEST_FILE
+      mRGBAFile = fopen("/data/misc/test.rgba", "wb");
+#endif
 }
 
 RepeaterSource::~RepeaterSource() {
     CHECK(!mStarted);
+#ifdef RGBA_TEST_FILE
+    if (mRGBAFile != NULL) {
+        fclose(mRGBAFile);
+        mRGBAFile = NULL;
+    }
+#endif
 }
 
 double RepeaterSource::getFrameRate() const {
@@ -234,6 +244,28 @@ status_t RepeaterSource::read(
                 memcpy(data + 16, &handle, 4);
                 private_handle_t *mHandle = (private_handle_t*)handle;
                 memcpy(data + 20, &(mHandle->share_fd), 4);
+#ifdef RGBA_TEST_FILE
+                if(mCurTimeUs != mUsingTimeUs) {
+                    const Rect rect(mWidth, mHeight);
+                    uint8_t *img=NULL;
+                    int res = GraphicBufferMapper::get().lock(handle,
+                                GRALLOC_USAGE_SW_READ_MASK,//GRALLOC_USAGE_HW_VIDEO_ENCODER,
+                                rect, (void**)&img);
+
+                    if (res != OK) {
+                        ALOGE("%s: Unable to lock image buffer %p for access", __FUNCTION__,
+                            *((long*)(mBuffer->data()+16)));
+                        GraphicBufferMapper::get().unlock(handle);
+                        return res;
+                    } else {
+                        if (mRGBAFile != NULL) {
+                            fwrite(img, 1, mWidth * mHeight * 4, mRGBAFile);
+                        }
+                    }
+                    GraphicBufferMapper::get().unlock(handle);
+                    mUsingTimeUs = mCurTimeUs;
+                }
+#endif
                 if(VPUMemJudgeIommu() == 0 && mCurTimeUs != mUsingTimeUs) {
                     const Rect rect(mWidth, mHeight);
                     uint8_t *img=NULL;

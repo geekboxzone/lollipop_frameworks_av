@@ -141,6 +141,21 @@ VideoFormats::VideoFormats() {
     }
 
     setNativeResolution(RESOLUTION_CEA, 0);  // default to 640x480 p60
+    mNativeType = kNumResolutionTypes;
+    mNativeIndex = -1;
+}
+
+bool VideoFormats::getNativeTypeAndIndex(ResolutionType *type, size_t *index, uint32_t nativeWidth, uint32_t nativeHeight) {
+    for(size_t i = 0; i < kNumResolutionTypes; ++i) {
+        for(size_t j = 0; j < 32; ++j) {
+            if(mResolutionTable[i][j].width == nativeWidth && mResolutionTable[i][j].height == nativeHeight) {
+                *type = (ResolutionType)i;
+                *index = j;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void VideoFormats::setNativeResolution(ResolutionType type, size_t index) {
@@ -490,37 +505,43 @@ bool VideoFormats::PickBestFormat(
     uint32_t bestScore = 0;
     size_t bestType = 0;
     size_t bestIndex = 0;
-    for (size_t i = 0; i < kNumResolutionTypes; ++i) {
-        for (size_t j = 0; j < 32; ++j) {
-            size_t width, height, framesPerSecond;
-            bool interlaced;
-            if (!GetConfiguration(
-                        (ResolutionType)i,
-                        j,
-                        &width, &height, &framesPerSecond, &interlaced)) {
-                break;
-            }
 
-            if (!sinkSupported.isResolutionEnabled((ResolutionType)i, j)
-                    || !sourceSupported.isResolutionEnabled(
-                        (ResolutionType)i, j)) {
-                continue;
-            }
+    sourceSupported.getNativeResolution((ResolutionType*)(&bestType), &bestIndex);
+    if(bestIndex != -1 && (sinkSupported.isResolutionEnabled((ResolutionType)bestType, bestIndex)))
+        first = false;
+    else {
+        for (size_t i = 0; i < kNumResolutionTypes; ++i) {
+            for (size_t j = 0; j < 32; ++j) {
+                size_t width, height, framesPerSecond;
+                bool interlaced;
+                if (!GetConfiguration(
+                            (ResolutionType)i,
+                            j,
+                            &width, &height, &framesPerSecond, &interlaced)) {
+                    break;
+                }
 
-            ALOGV("type %u, index %u, %u x %u %c%u supported",
-                  i, j, width, height, interlaced ? 'i' : 'p', framesPerSecond);
+                if (!sinkSupported.isResolutionEnabled((ResolutionType)i, j)
+                        || !sourceSupported.isResolutionEnabled(
+                            (ResolutionType)i, j)) {
+                    continue;
+                }
 
-            uint32_t score = width * height * framesPerSecond;
-            if (!interlaced) {
-                score *= 2;
-            }
+                ALOGV("type %u, index %u, %u x %u %c%u supported",
+                      i, j, width, height, interlaced ? 'i' : 'p', framesPerSecond);
 
-            if (first || score > bestScore) {
-                bestScore = score;
-                bestType = i;
-                bestIndex = j;
+                uint32_t score = width * height * framesPerSecond;
+                if (!interlaced) {
+                    score *= 2;
+                }
 
-                first = false;
+                if (first || score > bestScore) {
+                    bestScore = score;
+                    bestType = i;
+                    bestIndex = j;
+
+                    first = false;
+                }
             }
         }
     }

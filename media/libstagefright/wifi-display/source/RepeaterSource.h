@@ -74,7 +74,8 @@ private:
     int64_t	mCurTimeUs;
     int vpu_mem_index;
     int mNumPendingBuffers;
-    Condition mMediaBuffersAvailableCondition;	
+    Condition mMediaBuffersAvailableCondition;
+    FILE *mRGBAFile;
 
     void postRead();
 
