@@ -182,8 +182,6 @@ status_t RepeaterSource::read(
         MediaBuffer **buffer, const ReadOptions *options) {
     int64_t seekTimeUs;
     ReadOptions::SeekMode seekMode;
-    int64_t sys_time2;
-    int64_t sys_time3;
     CHECK(options == NULL || !options->getSeekTo(&seekTimeUs, &seekMode));
     while (mStarted && mNumPendingBuffers == maxbuffercount) {
         Mutex::Autolock autoLock(mLock);
@@ -319,11 +317,9 @@ status_t RepeaterSource::read(
                             Rga_Request.cosa = 65536;
 #endif
                             int ret;
-                            sys_time2 = systemTime(SYSTEM_TIME_MONOTONIC) / 1000;	
                             if(ret=ioctl(rga_fd, RGA_BLIT_ASYNC, &Rga_Request) != 0) {
                                 ALOGE("RepeaterSource rga RGA_BLIT_SYNC fail %x ret %d",ret);
                             } 
-                            sys_time3 = systemTime(SYSTEM_TIME_MONOTONIC) / 1000;	
                         }
                     }
                     GraphicBufferMapper::get().unlock(handle);
