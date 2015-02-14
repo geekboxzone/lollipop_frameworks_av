@@ -201,10 +201,10 @@ status_t RepeaterSource::read(
             }
 
             ALOGV("now resuming.");
-            mStartTimeUs = ALooper::GetNowUs();
+            mBuffer->meta_data()->findInt64(kKeyTime, &mStartTimeUs);
             bufferTimeUs = mStartTimeUs;
         } else {
-            bufferTimeUs = mStartTimeUs + (mFrameCount * 1000000ll) / mRateHz;
+            mBuffer->meta_data()->findInt64(kKeyTime, &bufferTimeUs);
 
             int64_t nowUs = ALooper::GetNowUs();
             int64_t delayUs = bufferTimeUs - nowUs;
