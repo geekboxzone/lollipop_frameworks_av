@@ -44,6 +44,7 @@
 #include <hardware/audio_effect.h>
 #include <media/AudioParameter.h>
 #include <soundtrigger/SoundTrigger.h>
+#include <cutils/properties.h>
 #include "AudioPolicyManager.h"
 #include "audio_policy_conf.h"
 
@@ -245,7 +246,7 @@ status_t AudioPolicyManager::setDeviceConnectionState(audio_devices_t device,
         // handle output device connection
         case AUDIO_POLICY_DEVICE_STATE_AVAILABLE:
             if (index >= 0) {
-                ALOGW("setDeviceConnectionState() device already connected: %x", device);
+                ALOGV("setDeviceConnectionState() device already connected: %x", device);
                 return INVALID_OPERATION;
             }
             ALOGV("setDeviceConnectionState() connecting device %x", device);
@@ -300,7 +301,7 @@ status_t AudioPolicyManager::setDeviceConnectionState(audio_devices_t device,
         // handle output device disconnection
         case AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE: {
             if (index < 0) {
-                ALOGW("setDeviceConnectionState() device not connected: %x", device);
+                ALOGV("setDeviceConnectionState() device not connected: %x", device);
                 return INVALID_OPERATION;
             }
 
@@ -395,7 +396,7 @@ status_t AudioPolicyManager::setDeviceConnectionState(audio_devices_t device,
         // handle input device connection
         case AUDIO_POLICY_DEVICE_STATE_AVAILABLE: {
             if (index >= 0) {
-                ALOGW("setDeviceConnectionState() device already connected: %d", device);
+                ALOGV("setDeviceConnectionState() device already connected: %d", device);
                 return INVALID_OPERATION;
             }
             sp<HwModule> module = getModuleForDevice(device);
@@ -420,7 +421,7 @@ status_t AudioPolicyManager::setDeviceConnectionState(audio_devices_t device,
         // handle input device disconnection
         case AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE: {
             if (index < 0) {
-                ALOGW("setDeviceConnectionState() device not connected: %d", device);
+                ALOGV("setDeviceConnectionState() device not connected: %d", device);
                 return INVALID_OPERATION;
             }
 
@@ -2688,6 +2689,30 @@ status_t AudioPolicyManager::removeAudioPatch(audio_patch_handle_t handle)
 // ----------------------------------------------------------------------------
 // AudioPolicyManager
 // ----------------------------------------------------------------------------
+#ifdef BOX_STRATEGY
+#define PROCCARDS                               "/proc/asound/cards"
+#define VALUESIZE  80
+
+static inline bool hasSpdif(){
+    char line[VALUESIZE];
+    bool ret = false;
+    FILE *fd = fopen(PROCCARDS, "r");
+    if(NULL != fd){
+        memset(line, 0, VALUESIZE);
+        while ((fgets(line, VALUESIZE, fd)) != NULL) {
+            line[VALUESIZE-1]='\0';
+            //ALOGD("%s\n", line);
+            if(strstr(line, "SPDIF") /*&& line[1]=='1'*/){
+                //ALOGI("spdif found.");
+                ret = true;
+                break;
+            }
+        }
+        fclose(fd);
+    }
+    return ret;
+}
+#endif
 
 uint32_t AudioPolicyManager::nextUniqueId()
 {
@@ -4045,6 +4070,58 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
                                                              bool fromCache)
 {
     uint32_t device = AUDIO_DEVICE_NONE;
+
+#ifdef BOX_STRATEGY
+	#define CARDSDEFAULT		0
+	#define CARDSTRATEGYSPDIF	1
+	#define CARDSTRATEGYBOTH	9
+	#define CARDSTRATEGYSPDIFPR 8
+	#define CARDSTRATEGYHDMIMUL 7
+	#define CARDSTRATEGYHDMIBS	6
+	#define CARDSTRATEGYBOTHSTR "9"
+	#define MEDIA_CFG_AUDIO_BYPASS	"media.cfg.audio.bypass"
+	#define MEDIA_CFG_AUDIO_MUL 	"media.cfg.audio.mul"
+	#define MEDIA_AUDIO_CURRENTPB	"persist.audio.currentplayback"
+	#define MEDIA_AUDIO_LASTPB		"persist.audio.lastsocplayback"
+
+	char value[PROPERTY_VALUE_MAX] = "";
+	int cardStrategy= 0;
+
+	property_get(MEDIA_AUDIO_CURRENTPB, value, "-1");
+	cardStrategy = atoi(value);
+	property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
+	property_set(MEDIA_CFG_AUDIO_MUL, "false");
+	ALOGV("cardStrategy = %d , hasSpdif() = %d", cardStrategy,hasSpdif());
+	switch (cardStrategy) {
+	case CARDSDEFAULT:
+		if(hasSpdif())
+			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_AVAILABLE, "");
+		else
+			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE, "");
+		break;
+	case CARDSTRATEGYHDMIMUL:
+		break;
+	case CARDSTRATEGYSPDIF:
+	case CARDSTRATEGYSPDIFPR:
+		setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_AVAILABLE, "");
+		if(cardStrategy==CARDSTRATEGYSPDIFPR)
+			property_set(MEDIA_CFG_AUDIO_BYPASS, "true");
+		else
+			property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
+		break;
+	case CARDSTRATEGYHDMIBS:
+		setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE, "");
+		property_set(MEDIA_CFG_AUDIO_BYPASS, "true");
+		break;
+	default:
+		if(hasSpdif())
+			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_AVAILABLE, "");
+		property_set(MEDIA_AUDIO_CURRENTPB, "0");
+		property_set(MEDIA_AUDIO_LASTPB, "0");
+		break;
+	}
+	system("sync");
+#endif
 
     if (fromCache) {
         ALOGVV("getDeviceForStrategy() from cache strategy %d, device %x",

@@ -68,6 +68,9 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_STATIC_LIBRARIES := \
     libmedia_helper
     
+ifneq ($(strip $(TARGET_BOARD_PLATFORM_TABLET)), true)
+	LOCAL_CFLAGS += -DBOX_STRATEGY
+endif
 ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
 	LOCAL_CFLAGS += -DSOFIA_FMR
 endif 
