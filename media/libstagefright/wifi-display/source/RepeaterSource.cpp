@@ -201,15 +201,6 @@ status_t RepeaterSource::read(
             ALOGV("now resuming.");
             mBuffer->meta_data()->findInt64(kKeyTime, &mStartTimeUs);
             bufferTimeUs = mStartTimeUs;
-        } else {
-            mBuffer->meta_data()->findInt64(kKeyTime, &bufferTimeUs);
-
-            int64_t nowUs = ALooper::GetNowUs();
-            int64_t delayUs = bufferTimeUs - nowUs;
-
-            if (delayUs > 0ll) {
-                usleep(delayUs);
-            }
         }
 
         bool stale = false;
@@ -220,7 +211,8 @@ status_t RepeaterSource::read(
                 CHECK(mBuffer == NULL);
                 return mResult;
             }
-
+            if(bufferTimeUs == -1ll)
+                mBuffer->meta_data()->findInt64(kKeyTime, &bufferTimeUs);
 #if SUSPEND_VIDEO_IF_IDLE
             int64_t nowUs = ALooper::GetNowUs();
             if (nowUs - mLastBufferUpdateUs > 1000000ll) {
