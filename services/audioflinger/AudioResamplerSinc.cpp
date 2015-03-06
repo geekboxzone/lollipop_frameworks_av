@@ -43,13 +43,7 @@
 #include <arm_neon.h>
 #define USE_NEON
 #else
-#if defined(USE_SSE4) || defined(USE_SSSE3)
-#define USE_INLINE_ASSEMBLY (true)
-#include <arm_neon.h>
-#define USE_NEON
-#else
 #undef USE_NEON
-#endif
 #endif
 
 #define UNUSED(x) ((void)(x))
