@@ -4611,6 +4611,12 @@ bool ACodec::UninitializedState::onAllocateComponent(const sp<AMessage> &msg) {
     } else {
         CHECK(msg->findString("mime", &mime));
 
+        int32_t flags = OMXCodec::kHardwareCodecsOnly;
+        if((!strncasecmp(mime.c_str(), "audio/", 6)) ||
+            (!strncasecmp(mime.c_str(), "video/x-vnd.on2.vp9", 19)))
+        {
+            flags = OMXCodec::kSoftwareCodecsOnly;
+        }
         int32_t encoder;
         if (!msg->findInt32("encoder", &encoder)) {
             encoder = false;
@@ -4620,7 +4626,7 @@ bool ACodec::UninitializedState::onAllocateComponent(const sp<AMessage> &msg) {
                 mime.c_str(),
                 encoder, // createEncoder
                 NULL,  // matchComponentName
-                OMXCodec::kPreferSoftwareCodecs,     // flags
+                flags,     // flags
                 &matchingCodecs);
     }
 
