@@ -264,12 +264,19 @@ void AnotherPacketSource::queueAccessUnit(const sp<ABuffer> &buffer) {
     }
 
     if (mLatestEnqueuedMeta == NULL) {
-        mLatestEnqueuedMeta = buffer->meta();
+        mLatestEnqueuedMeta = buffer->meta()->dup();
     } else {
         int64_t latestTimeUs = 0;
+        int64_t frameDeltaUs = 0;
         CHECK(mLatestEnqueuedMeta->findInt64("timeUs", &latestTimeUs));
         if (lastQueuedTimeUs > latestTimeUs) {
-            mLatestEnqueuedMeta = buffer->meta();
+            mLatestEnqueuedMeta = buffer->meta()->dup();
+            frameDeltaUs = lastQueuedTimeUs - latestTimeUs;
+            mLatestEnqueuedMeta->setInt64("durationUs", frameDeltaUs);
+        } else if (!mLatestEnqueuedMeta->findInt64("durationUs", &frameDeltaUs)) {
+            // For B frames
+            frameDeltaUs = latestTimeUs - lastQueuedTimeUs;
+            mLatestEnqueuedMeta->setInt64("durationUs", frameDeltaUs);
         }
     }
 }
@@ -335,14 +342,19 @@ void AnotherPacketSource::queueDiscontinuity(
 	    mEOSResult = OK;
 	    mLastQueuedTimeUs = 0;
 	    mLatestEnqueuedMeta = NULL;
-	    ++mQueuedDiscontinuityCount;
 
+	    if (type == ATSParser::DISCONTINUITY_NONE) {
+	        return;
+	    }
+
+	    ++mQueuedDiscontinuityCount;
 	    sp<ABuffer> buffer = new ABuffer(0);
 	    buffer->meta()->setInt32("discontinuity", static_cast<int32_t>(type));
 	    buffer->meta()->setMessage("extra", extra);
 
 	    mBuffers.push_back(buffer);
 	    mCondition.signal();
+
     }else{
 	    discontinuityFlag = true;
 	    mType = static_cast<int32_t>(type);

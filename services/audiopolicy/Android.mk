@@ -30,7 +30,8 @@ LOCAL_SHARED_LIBRARIES := \
     libbinder \
     libmedia \
     libhardware \
-    libhardware_legacy
+    libhardware_legacy \
+    libserviceutility
 
 ifneq ($(USE_LEGACY_AUDIO_POLICY), 1)
 LOCAL_SHARED_LIBRARIES += \
@@ -42,8 +43,7 @@ ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
 endif 
 
 LOCAL_STATIC_LIBRARIES := \
-    libmedia_helper \
-    libserviceutility
+    libmedia_helper
 
 LOCAL_MODULE:= libaudiopolicyservice
 

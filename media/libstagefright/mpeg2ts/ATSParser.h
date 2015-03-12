@@ -81,6 +81,7 @@ struct ATSParser : public RefBase {
     };
     sp<MediaSource> getSource(SourceType type,uint32_t& ProgramID,unsigned& elementaryPID);
     sp<MediaSource> getSource(SourceType type);
+    bool hasSource(SourceType type) const;
 
     int64_t getTimeus(uint32_t ProgramID,unsigned elementaryPID);
     void Start(unsigned AudioPID,unsigned VideoPID);
