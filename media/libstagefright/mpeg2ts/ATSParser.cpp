@@ -1104,6 +1104,7 @@ void ATSParser::Stream::signalDiscontinuity(
 
 
             extra->setInt64("resume-at-mediaTimeUs", resumeAtMediaTimeUs);
+                       type = DISCONTINUITY_FORMATCHANGE;
         }
     }
 
@@ -2048,13 +2049,7 @@ status_t ATSParser::parseTS(ABitReader *br) {
     ALOGV("---");
 
     unsigned sync_byte = br->getBits(8);
-    if (sync_byte != 0x47u) {
-        ALOGE("[error] parseTS: return error as sync_byte=0x%x", sync_byte);
-        return BAD_VALUE;
-    }
-
-    if (br->getBits(1)) {  // transport_error_indicator
-        // silently ignore.
+    if( sync_byte != 0x47u ){
         return OK;
     }
     MY_LOGV("transport_error_indicator = %u", br->getBits(1));
