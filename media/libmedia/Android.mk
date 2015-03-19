@@ -4,11 +4,6 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES:= \
     AudioParameter.cpp
-
-ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
-	LOCAL_CFLAGS += -DSOFIA_FMR
-endif 
-
 LOCAL_MODULE:= libmedia_helper
 LOCAL_MODULE_TAGS := optional
 
@@ -77,10 +72,6 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_STATIC_LIBRARIES += libinstantssq
 
 LOCAL_WHOLE_STATIC_LIBRARIES := libmedia_helper
-
-ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
-	LOCAL_CFLAGS += -DSOFIA_FMR
-endif 
 
 LOCAL_MODULE:= libmedia
 

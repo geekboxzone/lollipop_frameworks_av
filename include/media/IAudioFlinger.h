@@ -237,11 +237,6 @@ public:
 
     /* Get the HW synchronization source used for an audio session */
     virtual audio_hw_sync_t getAudioHwSyncForSession(audio_session_t sessionId) = 0;
-#ifdef SOFIA_FMR
-    // PEKALL FMR begin:
-    virtual status_t setFmVolume(float volume) = 0;
-    // PEKALL FMR end
-#endif//SOFIA_FMR
 };
 
 

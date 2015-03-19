@@ -203,11 +203,6 @@ protected:
 			STRATEGY_TRANSMITTED_THROUGH_SPEAKER,
             STRATEGY_ACCESSIBILITY,
             STRATEGY_REROUTING,
-#ifdef SOFIA_FMR
-            // PEKALL FMR begin
-            STRATEGY_FM,
-            // PEKALL FMR end
-#endif //SOFIA_FMR
             NUM_STRATEGIES
         };
 
@@ -467,11 +462,6 @@ protected:
         static const VolumeCurvePoint sHeadsetSystemVolumeCurve[AudioPolicyManager::VOLCNT];
         static const VolumeCurvePoint sDefaultVoiceVolumeCurve[AudioPolicyManager::VOLCNT];
         static const VolumeCurvePoint sSpeakerVoiceVolumeCurve[AudioPolicyManager::VOLCNT];
-#ifdef SOFIA_FMR
-        // PEKALL FMR begin
-        static const VolumeCurvePoint sFMVolumeCurve[AudioPolicyManager::VOLCNT];
-        // PEKAL FMR end
-#endif //SOFIA_FMR
         static const VolumeCurvePoint sLinearVolumeCurve[AudioPolicyManager::VOLCNT];
         static const VolumeCurvePoint sSilentVolumeCurve[AudioPolicyManager::VOLCNT];
         static const VolumeCurvePoint sFullScaleVolumeCurve[AudioPolicyManager::VOLCNT];
@@ -889,13 +879,6 @@ protected:
         uint32_t        mTestChannels;
         uint32_t        mTestLatencyMs;
 #endif //AUDIO_POLICY_TEST
-
-#ifdef SOFIA_FMR
-        // PEKALL FMR begin:
-        bool mFmOn;
-        // PEKALL FMR end
-#endif //SOFIA_FMR
-
 private:
         static float volIndexToAmpl(audio_devices_t device, const StreamDescriptor& streamDesc,
                 int indexInUi);

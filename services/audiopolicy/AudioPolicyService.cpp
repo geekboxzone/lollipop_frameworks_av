@@ -510,21 +510,6 @@ bool AudioPolicyService::AudioCommandThread::threadLoop()
                         command->mStatus = af->setAudioPortConfig(&data->mConfig);
                     }
                     } break;
-#ifdef SOFIA_FMR
-				// PEKALL FMR begin:
-                case SET_FM_VOLUME: {
-                    FmVolumeData *data = (FmVolumeData *)command->mParam.get();
-                    ALOGV("AudioCommandThread() processing set fm volume volume %f",
-                            data->mVolume);
-                    command->mStatus = AudioSystem::setFmVolume(data->mVolume);
-                    ALOGV("AudioCommandThread() processing set fm volume volume done!");
-                    if (command->mWaitStatus) {
-                        command->mCond.signal();
-                        mWaitWorkCV.wait(mLock);
-                    }
-                }break;
-                // PEKALL FMR end
-#endif//SOFIA_FMR
                 default:
                     ALOGW("AudioCommandThread() unknown command %d", command->mCommand);
                 }
@@ -779,32 +764,6 @@ status_t AudioPolicyService::AudioCommandThread::sendCommand(sp<AudioCommand>& c
     return command->mStatus;
 }
 
-#ifdef SOFIA_FMR
-// PEKALL FMR begin:
-status_t AudioPolicyService::AudioCommandThread::fmVolumeCommand(
-        float volume, int delayMs)
-{
-    status_t status = NO_ERROR;
-
-    sp<AudioCommand> command = new AudioCommand();
-    command->mCommand = SET_FM_VOLUME;
-    FmVolumeData *data = new FmVolumeData();
-    data->mVolume = volume;
-    command->mParam = data;
-    Mutex::Autolock _l(mLock);
-    insertCommand_l(command, delayMs);
-    ALOGV("AudioCommandThread() adding set fm volume volume %f", volume);
-    mWaitWorkCV.signal();
-    if (command->mWaitStatus) {
-        command->mCond.wait(mLock);
-        status =  command->mStatus;
-        mWaitWorkCV.signal();
-    }
-    return status;
-}
-// PEKALL FMR end
-#endif //SOFIA_FMR
-
 // insertCommand_l() must be called with mLock held
 void AudioPolicyService::AudioCommandThread::insertCommand_l(sp<AudioCommand>& command, int delayMs)
 {
@@ -927,13 +886,7 @@ void AudioPolicyService::AudioCommandThread::insertCommand_l(sp<AudioCommand>& c
             // command status as the command is now delayed
             delayMs = 1;
         } break;
-#ifdef SOFIA_FMR
-		// PEKALL FMR begin:
-        case SET_FM_VOLUME: {
-            removedCommands.add(command2);
-        } break;
-        // PEKALL FMR end
-#endif
+
         case START_TONE:
         case STOP_TONE:
         default:
@@ -1031,14 +984,6 @@ int AudioPolicyService::setVoiceVolume(float volume, int delayMs)
 {
     return (int)mAudioCommandThread->voiceVolumeCommand(volume, delayMs);
 }
-#ifdef SOFIA_FMR
-// PEKALL FMR begin:
-status_t AudioPolicyService::setFmVolume(float volume, int delayMs)
-{
-    return mAudioCommandThread->fmVolumeCommand(volume, delayMs);
-}
-// PEKALL FMR end
-#endif //SOFIA_FMR
 
 extern "C" {
 audio_module_handle_t aps_load_hw_module(void *service __unused,

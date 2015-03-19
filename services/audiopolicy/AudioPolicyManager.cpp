@@ -112,12 +112,6 @@ const StringToEnum sDeviceNameToEnumTable[] = {
     STRING_TO_ENUM(AUDIO_DEVICE_IN_SPDIF),
     STRING_TO_ENUM(AUDIO_DEVICE_IN_BLUETOOTH_A2DP),
     STRING_TO_ENUM(AUDIO_DEVICE_IN_LOOPBACK),
-#ifdef SOFIA_FMR
-    // PEKALL FMR begin:
-    STRING_TO_ENUM(AUDIO_DEVICE_OUT_FM),
-    STRING_TO_ENUM(AUDIO_DEVICE_IN_FM_RX),
-    // PEKALL FMR end    
-#endif//SOFIA_FMR
 };
 
 const StringToEnum sOutputFlagNameToEnumTable[] = {
@@ -286,27 +280,7 @@ status_t AudioPolicyManager::setDeviceConnectionStateInt(audio_devices_t device,
             AudioParameter param = AudioParameter(devDesc->mAddress);
             param.addInt(String8(AUDIO_PARAMETER_DEVICE_CONNECT), device);
             mpClientInterface->setParameters(AUDIO_IO_HANDLE_NONE, param.toString());
-#ifdef SOFIA_FMR
-			// PEKALL FMR begin:
-			if (!outputs.isEmpty()) {
-                
-                if (audio_is_fm_device(device)) {
-                    ALOGV("open fm radio");
-                    sp<AudioOutputDescriptor> hwOutputDesc = mOutputs.valueFor(mPrimaryOutput);
-                    hwOutputDesc->mRefCount[FM] = 1;
-                    mFmOn = true;
 
-                    // FIXME: Just inform the audio flinger that the FMR is on,
-                    // not really invoking setParameters()
-                    AudioParameter param = AudioParameter();
-                    param.addInt(String8(AudioParameter::keyFmOn), mAvailableOutputDevices.types());
-                    mpClientInterface->setParameters(mPrimaryOutput, param.toString());
-
-                    break;
-                }
-            }
-			// PEKALL FMR end
-#endif//SOFIA_FMR
            } break;
 
         // handle output device disconnection
@@ -328,22 +302,6 @@ status_t AudioPolicyManager::setDeviceConnectionStateInt(audio_devices_t device,
 
 
             checkOutputsForDevice(devDesc, state, outputs, devDesc->mAddress);
-#ifdef SOFIA_FMR
-			// PEKALL FMR begin:
-            if (audio_is_fm_device(device)) {
-                ALOGV("close FM Radio");
-                sp<AudioOutputDescriptor> hwOutputDesc = mOutputs.valueFor(mPrimaryOutput);
-                hwOutputDesc->mRefCount[FM] = 0;
-                mFmOn = false;
-
-                // FIXME: Just inform the audio flinger that the FMR is off,
-                // not really invoking setParameters()
-                AudioParameter param = AudioParameter();
-                param.addInt(String8(AudioParameter::keyFmOff), mAvailableOutputDevices.types());
-                mpClientInterface->setParameters(mPrimaryOutput, param.toString());
-            }
-            // PEKALL FMR end
-#endif//SOFIA_FMR
 
             } break;
 
@@ -805,13 +763,7 @@ void AudioPolicyManager::setForceUse(audio_policy_force_use_t usage,
             config != AUDIO_POLICY_FORCE_ANALOG_DOCK &&
             config != AUDIO_POLICY_FORCE_DIGITAL_DOCK && config != AUDIO_POLICY_FORCE_NONE &&
 			config != AUDIO_POLICY_FORCE_NO_BT_A2DP && config != AUDIO_POLICY_FORCE_SPEAKER &&
-            config != AUDIO_POLICY_FORCE_NO_BT_A2DP
-#ifdef SOFIA_FMR
-            // PEKALL FMR begin:
-            && config != AUDIO_POLICY_FORCE_SPEAKER
-            // PEKALL FMR end
-#endif//SOFIA_FMR
-            ) {
+            config != AUDIO_POLICY_FORCE_NO_BT_A2DP) {
             ALOGW("setForceUse() invalid config %d for FOR_MEDIA", config);
             return;
         }
@@ -2113,14 +2065,6 @@ bool AudioPolicyManager::isNonOffloadableEffectEnabled()
 
 bool AudioPolicyManager::isStreamActive(audio_stream_type_t stream, uint32_t inPastMs) const
 {
-#ifdef SOFIA_FMR
-	// PEKALL FMR begin:
-    if (stream == FM) {
-        ALOGV("isStreamActive, fm: %d", mFmOn);
-        return mFmOn;
-    }
-    // PEKALL FMR end
-#endif//SOFIA_FMR   
     nsecs_t sysTime = systemTime();
     for (size_t i = 0; i < mOutputs.size(); i++) {
         const sp<AudioOutputDescriptor> outputDesc = mOutputs.valueAt(i);
@@ -3142,12 +3086,6 @@ AudioPolicyManager::AudioPolicyManager(AudioPolicyClientInterface *clientInterfa
     mBeaconMuteRefCount(0),
     mBeaconPlayingRefCount(0),
     mBeaconMuted(false)
-#ifdef SOFIA_FMR
-    // PEKALL FMR begin:
-    ,mFmOn(false)
-    // PEKALL FMR end
-#endif //SOFIA_FMR
-
 {
     mUidCached = getuid();
     mpClientInterface = clientInterface;
@@ -4382,13 +4320,7 @@ audio_devices_t AudioPolicyManager::getNewOutputDevice(audio_io_handle_t output,
     } else if (outputDesc->isStrategyActive(STRATEGY_REROUTING)) {
         device = getDeviceForStrategy(STRATEGY_REROUTING, fromCache);
     }
-#ifdef SOFIA_FMR
-	// PEKALL FMR begin
-	else if (outputDesc->isStrategyActive(STRATEGY_FM)) {
-        device = getDeviceForStrategy(STRATEGY_FM, fromCache);
-    }
-	// PEKALL FMR end
-#endif //SOFIA_FMR
+
     ALOGV("getNewOutputDevice() selected device %x", device);
     return device;
 }
@@ -4463,12 +4395,6 @@ AudioPolicyManager::routing_strategy AudioPolicyManager::getStrategy(
         return STRATEGY_SONIFICATION_RESPECTFUL;
     case AUDIO_STREAM_DTMF:
         return STRATEGY_DTMF;
-#ifdef SOFIA_FMR
-	// PEKALL FMR begin:
-    case FM:
-        return STRATEGY_FM;
-    // PEKALL FMR end
-#endif//SOFIA_FMR
     default:
         ALOGE("unknown stream type %d", stream);
     case AUDIO_STREAM_SYSTEM:
@@ -4728,16 +4654,7 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
         }
         // when in call, DTMF and PHONE strategies follow the same rules
         // FALL THROUGH
-#ifdef SOFIA_FMR
-    // PEKALL FMR begin    
-    case STRATEGY_FM:
-        if (!isInCall()) {
-            // when off call, DTMF strategy follows the same rules as MEDIA strategy
-            device = getDeviceForStrategy(STRATEGY_MEDIA, false /*fromCache*/);
-            break;
-        }
-    // PEKALL FMR end
-#endif //SOFIA_FMR
+
     case STRATEGY_PHONE:
         // Force use of only devices on primary output if:
         // - in call AND
@@ -4888,24 +4805,11 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
             if (mAvailableOutputDevices.getDevice(AUDIO_DEVICE_OUT_REMOTE_SUBMIX, String8("0")) != 0) {
                 device2 = availableOutputDeviceTypes & AUDIO_DEVICE_OUT_REMOTE_SUBMIX;
             }
-        }
-#ifdef SOFIA_FMR
-		// PEKALL FMR begin:
-        if (mForceUse[AUDIO_POLICY_FORCE_FOR_MEDIA] == AUDIO_POLICY_FORCE_SPEAKER) {
-            device2 = availableOutputDeviceTypes & AUDIO_DEVICE_OUT_SPEAKER;
-        }
-        // PEKALL FMR end
-#endif //SOFIA_FMR       
+        }     
         if ((device2 == AUDIO_DEVICE_NONE) &&
                 (mForceUse[AUDIO_POLICY_FORCE_FOR_MEDIA] != AUDIO_POLICY_FORCE_NO_BT_A2DP) &&
 
-                (getA2dpOutput() != 0)
-#ifdef SOFIA_FMR
-                // PEKALL FMR begin: Do NOT support to play FM by A2DP
-                && ((availableOutputDeviceTypes & AUDIO_DEVICE_OUT_FM) == 0)
-                // PEKALL FMR end
-#endif //SOFIA_FMR
-                ) {
+                (getA2dpOutput() != 0)) {
 
             device2 = availableOutputDeviceTypes & AUDIO_DEVICE_OUT_BLUETOOTH_A2DP;
             if (device2 == AUDIO_DEVICE_NONE) {
@@ -4947,12 +4851,7 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
         }
         if (device2 == AUDIO_DEVICE_NONE) {
             device2 = availableOutputDeviceTypes & AUDIO_DEVICE_OUT_SPEAKER;
-        }
-#ifdef SOFIA_FMR
-        // PEKALL FMR begin:
-        device2 |= availableOutputDeviceTypes & AUDIO_DEVICE_OUT_FM;
-        // PEKALL FMR end
-#endif //SOFIA_FMR        
+        }    
         int device3 = AUDIO_DEVICE_NONE;
         if (strategy == STRATEGY_MEDIA) {
             // ARC, SPDIF and AUX_LINE can co-exist with others.
@@ -5009,33 +4908,13 @@ uint32_t AudioPolicyManager::checkDeviceMuteStrategies(sp<AudioOutputDescriptor>
     }
 
     uint32_t muteWaitMs = 0;
-    audio_devices_t device = outputDesc->device();
-	
-#ifdef SOFIA_FMR
-	// PEKALL begin: device FMR+speaker/FMR+headset should be same physical
-    // device with speaker/headset. Need not wait for the audio in pcm buffer
-    // to be drained SMS04706367.
-    if (device & AUDIO_DEVICE_OUT_FM) {
-        device &= ~AUDIO_DEVICE_OUT_FM;
-    }
-    // PEKALL end
-#endif //SOFIA_FMR
-    
+    audio_devices_t device = outputDesc->device();    
     bool shouldMute = outputDesc->isActive() && (popcount(device) >= 2);
 
     for (size_t i = 0; i < NUM_STRATEGIES; i++) {
         audio_devices_t curDevice = getDeviceForStrategy((routing_strategy)i, false /*fromCache*/);
 
         curDevice = curDevice & outputDesc->mProfile->mSupportedDevices.types();
-#ifdef SOFIA_FMR
-		// PEKALL begin: device FMR+speaker/FMR+headset should be same physical
-        // device with speaker/headset. Need not wait for the audio in pcm buffer
-        // to be drained SMS04706367.
-        if (curDevice & AUDIO_DEVICE_OUT_FM) {
-            curDevice &= ~AUDIO_DEVICE_OUT_FM;
-        }
-        // PEKALL end
-#endif //SOFIA_FMR
         bool mute = shouldMute && (curDevice & device) && (curDevice != device);
         bool doMute = false;
 
@@ -5495,15 +5374,6 @@ audio_devices_t AudioPolicyManager::getDeviceForInputSource(audio_source_t input
             device = AUDIO_DEVICE_IN_REMOTE_SUBMIX;
         }
         break;
-#ifdef SOFIA_FMR
-	// PEKALL FMR begin:
-    case AUDIO_SOURCE_FM_RX:
-        if (availableDeviceTypes & AUDIO_DEVICE_IN_FM_RX) {
-            device = AUDIO_DEVICE_IN_FM_RX;
-        }
-        break;
-    // PEKALL FMR end
-#endif //SOFIA_FMR
      case AUDIO_SOURCE_FM_TUNER:
         if (availableDeviceTypes & AUDIO_DEVICE_IN_FM_TUNER) {
             device = AUDIO_DEVICE_IN_FM_TUNER;
@@ -5558,13 +5428,6 @@ uint32_t AudioPolicyManager::activeInputsCount() const
 
 audio_devices_t AudioPolicyManager::getDeviceForVolume(audio_devices_t device)
 {
-#ifdef SOFIA_FMR
-	// PEKALL FMR begin:
-    if(audio_is_fm_device(device)) {
-        return device;
-    }
-    // PEKALL FMR end
-#endif //SOFIA_FMR
     if (device == AUDIO_DEVICE_NONE) {
         // this happens when forcing a route update and no track is active on an output.
         // In this case the returned category is not important.
@@ -5739,15 +5602,6 @@ const AudioPolicyManager::VolumeCurvePoint
     AudioPolicyManager::sSpeakerVoiceVolumeCurve[AudioPolicyManager::VOLCNT] = {
     {0, -24.0f}, {33, -16.0f}, {66, -8.0f}, {100, 0.0f}
 };
-#ifdef SOFIA_FMR
-// PEKALL FMR begin
-const AudioPolicyManager::VolumeCurvePoint
-    AudioPolicyManager::sFMVolumeCurve[AudioPolicyManager::VOLCNT] = {
-    {1, -46.5f}, {28, -36.0f}, {64, -18.0f}, {88, -6.0f}
-};
-// PEKALL FMR end
-#endif //SOFIA_FMR
-
 const AudioPolicyManager::VolumeCurvePoint
     AudioPolicyManager::sLinearVolumeCurve[AudioPolicyManager::VOLCNT] = {
     {0, -96.0f}, {33, -68.0f}, {66, -34.0f}, {100, 0.0f}
@@ -5845,15 +5699,6 @@ const AudioPolicyManager::VolumeCurvePoint
         sFullScaleVolumeCurve, // DEVICE_CATEGORY_EARPIECE
         sFullScaleVolumeCurve  // DEVICE_CATEGORY_EXT_MEDIA
     },
-#ifdef SOFIA_FMR
-    // PEKALL FMR begin
-    { // AUDIO_STREAM_FM
-        sFMVolumeCurve, // DEVICE_CATEGORY_HEADSET
-        sFMVolumeCurve, // DEVICE_CATEGORY_SPEAKER
-        sFMVolumeCurve  // DEVICE_CATEGORY_EARPIECE
-    },
-    // PEKALL FMR end
-#endif //SOFIA_FMR
 };
 
 void AudioPolicyManager::initializeVolumeCurves()
@@ -5960,22 +5805,6 @@ status_t AudioPolicyManager::checkAndSetVolume(audio_stream_type_t stream,
              stream, mForceUse[AUDIO_POLICY_FORCE_FOR_COMMUNICATION]);
         return INVALID_OPERATION;
     }
-#ifdef SOFIA_FMR
-	// PEKALL FMR begin:
-    if (stream == FM) {
-        float fmVolume = -1.0;
-        fmVolume = computeVolume(stream, index, output, device);
-        ALOGV("checkAndSetVolume() fm stream %d index %d, output %d, device %d",
-                stream, index, output, device);
-        if (fmVolume >= 0 && output == mPrimaryOutput) {
-            ALOGV("fm volume: %f", fmVolume);
-            mpClientInterface->setFmVolume(fmVolume, delayMs);
-        }
-        return NO_ERROR;
-    }
-    // PEKALL FMR end
-#endif //SOFIA_FMR
-
     float volume = computeVolume(stream, index, output, device);
     // unit gain if rerouting to external policy
     if (device == AUDIO_DEVICE_OUT_REMOTE_SUBMIX) {

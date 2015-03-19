@@ -38,10 +38,6 @@ LOCAL_SHARED_LIBRARIES += \
     libaudiopolicymanager
 endif
 
-ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
-	LOCAL_CFLAGS += -DSOFIA_FMR
-endif 
-
 LOCAL_STATIC_LIBRARIES := \
     libmedia_helper
 
@@ -71,9 +67,6 @@ LOCAL_STATIC_LIBRARIES := \
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_PRODUCT)), box)
 	LOCAL_CFLAGS += -DBOX_STRATEGY
 endif
-ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
-	LOCAL_CFLAGS += -DSOFIA_FMR
-endif 
 
 LOCAL_MODULE:= libaudiopolicymanagerdefault
 
@@ -90,10 +83,6 @@ LOCAL_SHARED_LIBRARIES := \
     libaudiopolicymanagerdefault
 
 LOCAL_MODULE:= libaudiopolicymanager
-
-ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
-        LOCAL_CFLAGS += -DSOFIA_FMR
-endif
 
 include $(BUILD_SHARED_LIBRARY)
 

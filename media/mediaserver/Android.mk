@@ -40,10 +40,6 @@ LOCAL_C_INCLUDES := \
     $(call include-path-for, audio-utils) \
     frameworks/av/services/soundtrigger
 
-ifeq ($(strip $(TARGET_BOARD_HARDWARE)), sofiaboard)
-        LOCAL_CFLAGS += -DSOFIA_FMR
-endif
-
 LOCAL_MODULE:= mediaserver
 LOCAL_32_BIT_ONLY := true
 

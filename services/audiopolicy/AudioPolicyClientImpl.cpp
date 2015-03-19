@@ -171,15 +171,6 @@ status_t AudioPolicyService::AudioPolicyClient::setVoiceVolume(float volume, int
     return mAudioPolicyService->setVoiceVolume(volume, delay_ms);
 }
 
-#ifdef SOFIA_FMR
-// PEKALL FMR begin
-status_t AudioPolicyService::AudioPolicyClient::setFmVolume(float volume, int delayMs)
-{
-	return mAudioPolicyService->setFmVolume(volume, delayMs);
-}
-// PEKALL FMR end
-#endif //SOFIA_FMR
-
 status_t AudioPolicyService::AudioPolicyClient::moveEffects(int session,
                         audio_io_handle_t src_output,
                         audio_io_handle_t dst_output)

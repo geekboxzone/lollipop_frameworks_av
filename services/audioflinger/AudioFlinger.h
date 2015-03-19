@@ -188,11 +188,7 @@ public:
     virtual status_t invalidateStream(audio_stream_type_t stream);
 
     virtual status_t setVoiceVolume(float volume);
-#ifdef SOFIA_FMR
-    // PEKALL FMR begin:
-    virtual status_t setFmVolume(float volume);
-    // PEKALL FMR end
-#endif//SOFIA_FMR
+
     virtual status_t getRenderPosition(uint32_t *halFrames, uint32_t *dspFrames,
                                        audio_io_handle_t output) const;
 
@@ -699,11 +695,6 @@ private:
         AUDIO_HW_GET_PARAMETER,         // get_parameters
         AUDIO_HW_SET_MASTER_MUTE,       // set_master_mute
         AUDIO_HW_GET_MASTER_MUTE,       // get_master_mute
-#ifdef SOFIA_FMR
-        // PEKALL FMR begin:
-        AUDIO_HW_SET_FM_VOLUME
-        // PEKALL FMR end
-#endif //SOFIA_FMR
     };
 
     mutable     hardware_call_state                 mHardwareStatus;    // for dump only
@@ -800,11 +791,6 @@ private:
 
     uint32_t    mPrimaryOutputSampleRate;   // sample rate of the primary output, or zero if none
                                             // protected by mHardwareLock
-#ifdef SOFIA_FMR
-    // PEKALL FMR begin:
-    bool mFmOn;
-    // PEKALL FMR end
-#endif//SOFIA_FMR
 };
 
 #undef INCLUDING_FROM_AUDIOFLINGER_H

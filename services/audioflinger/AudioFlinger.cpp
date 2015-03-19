@@ -180,11 +180,6 @@ AudioFlinger::AudioFlinger()
       mIsDeviceTypeKnown(false),
       mGlobalEffectEnableTime(0),
       mPrimaryOutputSampleRate(0)
-#ifdef SOFIA_FMR
-      // PEKALL FMR begin:
-      ,mFmOn(false)
-      // PEKALL FMR end
-#endif//SOFIA_FMR
 {
     getpid_cached = getpid();
     char value[PROPERTY_VALUE_MAX];
@@ -1015,24 +1010,7 @@ status_t AudioFlinger::setParameters(audio_io_handle_t ioHandle, const String8& 
     if (!settingsAllowed()) {
         return PERMISSION_DENIED;
     }
-#ifdef SOFIA_FMR
-	// PEKALL FMR begin:
-    int fmDevice;
-    AudioParameter param = AudioParameter(keyValuePairs);
 
-    String8 fmOnKey = String8(AudioParameter::keyFmOn);
-    String8 fmOffKey = String8(AudioParameter::keyFmOff);
-    if (param.getInt(fmOnKey, fmDevice) == NO_ERROR) {
-        ALOGV("AudioFlinger::setParameters open fm radio");
-        mFmOn = true;
-        return NO_ERROR;
-    } else if (param.getInt(fmOffKey, fmDevice) == NO_ERROR) {
-        ALOGV("AudioFlinger::setParameters close fm radio");
-        mFmOn = false;
-        return NO_ERROR;
-    }
-    // PEKALL FMR end
-#endif//SOFIA_FMR
     // AUDIO_IO_HANDLE_NONE means the parameters are global to the audio hardware interface
     if (ioHandle == AUDIO_IO_HANDLE_NONE) {
         Mutex::Autolock _l(mLock);
@@ -1198,39 +1176,6 @@ status_t AudioFlinger::setVoiceVolume(float value)
 
     return ret;
 }
-#ifdef SOFIA_FMR
-// PEKALL FMR begin:
-status_t AudioFlinger::setFmVolume(float value)
-{
-    status_t ret = initCheck();
-    if (ret != NO_ERROR) {
-        return ret;
-    }
-
-    // check calling permissions
-    if (!settingsAllowed()) {
-        return PERMISSION_DENIED;
-    }
-    if (!mFmOn) {
-        ALOGI("setFmVolume: %f. fm off, skip", value);
-        return NO_INIT;
-    }
-
-    AutoMutex lock(mHardwareLock);
-    mHardwareStatus = AUDIO_HW_SET_FM_VOLUME;
-    ALOGV("setFmVolume: %f", value);
-    const size_t SIZE = 30;
-    char keyval_pair[SIZE];
-
-    snprintf(keyval_pair, SIZE, "%s=%f", AudioParameter::keyFmVolume, value);
-    audio_hw_device_t *dev = mPrimaryHardwareDev->hwDevice();
-    ret = dev->set_parameters(dev, (const char *)&keyval_pair);
-    ALOGV("setFmVolume done");
-    mHardwareStatus = AUDIO_HW_IDLE;
-    return ret;
-}
-// PEKALL FMR end
-#endif //SOFIA_FMR
 
 status_t AudioFlinger::getRenderPosition(uint32_t *halFrames, uint32_t *dspFrames,
         audio_io_handle_t output) const
