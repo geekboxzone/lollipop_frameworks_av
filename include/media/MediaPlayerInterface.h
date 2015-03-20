@@ -43,6 +43,7 @@ class IGraphicBufferProducer;
 template<typename T> class SortedVector;
 
 enum player_type {
+    NO_PLAYER = 0,
     PV_PLAYER = 1,
     SONIVOX_PLAYER = 2,
     STAGEFRIGHT_PLAYER = 3,

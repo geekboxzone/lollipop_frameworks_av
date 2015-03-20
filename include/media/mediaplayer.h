@@ -118,6 +118,14 @@ enum media_info_type {
     // Bandwidth in recent past
     MEDIA_INFO_NETWORK_BANDWIDTH = 703,
 
+	//LoadingPercent add by xhr
+	MEDIA_INFO_BUFFERING_PERCENT = 705,
+
+	//LoadingRate add by xhr
+	MEDIA_INFO_LAODING_RATE = 706,
+
+	//decoder cfg suport audio play whether,add by xhr
+	MEDIA_INFO_DECODER_CFG_AUDIO_SUPPORT = 708,
     // 8xx
     // Bad interleaving means that a media has been improperly interleaved or not
     // interleaved at all, e.g has all the video samples first then all the audio
@@ -130,6 +138,32 @@ enum media_info_type {
 
     //9xx
     MEDIA_INFO_TIMED_TEXT_ERROR = 900,
+    MEDIA_INFO_PLAYING_START = 901,
+
+	//xiaomi, for Conrol pause after loading start,add by xhr
+    MEDIA_INFO_PLAYING_END = 902,
+	
+	    //95xx
+    MEDIA_INFO_BLURAY_COMPLETE  = 950,
+    MEDIA_INFO_BLURAY_REPORT_VIDEO_PID  = 951,/* $ add by xhr $ 20130707 $ for notify ts stream track PID $ Bluray Program $ */
+    MEDIA_INFO_BLURAY_REPORT_AUDIO_PID  = 952,/* $ add by xhr $ 20130707 $ for notify ts stream track PID $ Bluray Program $ */
+    MEDIA_INFO_BLURAY_REPORT_SUBTITLE_PID = 953,/* $ add by xhr $ 20130707 $ for notify ts stream track PID $ Bluray Program $ */
+
+
+    MEDIA_INFO_STOP_AUDIOPLAYERCALL = 960,    /* $ add by xhr $ 20140527 $ for stop audio play that  huawei program $ */
+
+    MEDIA_INFO_GET_VIDEO_TRACK_INFOR = 961,
+    MEDIA_INFO_GET_AUDIO_TRACK_INFOR = 962,
+    MEDIA_INFO_GET_SUBTITLE_TRACK_INFOR = 963,
+    MEDIA_INFO_GET_PLAYING_AUDIO_TRACK_INDEX = 964,
+    MEDIA_INFO_GET_PLAYING_SUBTITLE_TRACK_INDEX = 965,
+    MEDIA_INFO_SET_AUDIO_TRACK = 966,
+    MEDIA_INFO_SET_SUBTITLE_TRACK = 967,
+    MEDIA_INFO_GET_SUBTITLE_VISIBLE = 968,
+    MEDIA_INFO_SET_SUBTITLE_VISIBLE = 969,
+    MEDIA_INFO_SET_VIDEO_SURFACEVIEW_ZORDER = 970,
+    MEDIA_INFO_SET_MAX_QUEUE_SIZE = 971,
+    MEDIA_INFO_GET_WHETHER_DOBLY = 972,
 };
 
 
@@ -160,9 +194,18 @@ enum media_parameter_keys {
     // Playback rate expressed in permille (1000 is normal speed), saved as int32_t, with negative
     // values used for rewinding or reverse playback.
     KEY_PARAMETER_PLAYBACK_RATE_PERMILLE = 1300,                // set only
+    KEY_PARAMETER_GET_RATIO_NUM                = 1205,          //get only
+    KEY_PARAMETER_GET_LOADING_PERCENT          = 1206,          //get only
 
     // Set a Parcel containing the value of a parcelled Java AudioAttribute instance
-    KEY_PARAMETER_AUDIO_ATTRIBUTES = 1400                       // set only
+    KEY_PARAMETER_AUDIO_ATTRIBUTES = 1400,                       // set only
+    KEY_PARAMETER_AML_PLAYER_GETSET_BUFFERING_THRESHHOLD_MIN = 2009, //get only
+    KEY_PARAMETER_AML_PLAYER_GETSET_BUFFERING_THRESHHOLD_MIDDLE = 2010, //get only
+    KEY_PARAMETER_AML_PLAYER_GETSET_BUFFERING_THRESHHOLD_MAX = 2011, //get only
+    KEY_PARAMETER_AML_PLAYER_GET_BUFFERINGED_PERCENT = 2012,         //get only
+    KEY_PARAMETER_AML_PLAYER_GETSET_UNKNOW_ONE = 2021,              
+    KEY_PARAMETER_AML_PLAYER_GETSET_UNKNOW_TWO = 2022,
+    KEY_PARAMETER_AML_PLAYER_GETSET_UNMNOW_THREE = 2023,
 };
 
 // Keep INVOKE_ID_* in sync with MediaPlayer.java.
