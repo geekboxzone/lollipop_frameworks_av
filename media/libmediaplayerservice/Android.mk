@@ -6,8 +6,12 @@ LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
+ifneq ($(filter rk%, $(TARGET_BOARD_PLATFORM)), )
 LOCAL_CFLAGS := -DAVS50
 BUILD_FF_PALYER := true
+else
+BUILD_FF_PALYER := false
+endif
 
 LOCAL_SRC_FILES :=               \
     ActivityManager.cpp         \
@@ -55,13 +59,10 @@ LOCAL_STATIC_LIBRARIES :=       \
 LOCAL_C_INCLUDES :=                                                 \
     external/mac  \
     $(TOP)/frameworks/av/media/libstagefright/include               \
-    $(TOP)/external/ffmpeg                                          \
     $(TOP)/frameworks/av/media/libstagefright/rtsp                  \
     $(TOP)/frameworks/av/media/libstagefright/wifi-display          \
     $(TOP)/frameworks/av/media/libstagefright/webm                  \
     $(TOP)/frameworks/native/include/media/openmax                  \
-    $(TOP)/frameworks/av/media/libstagefright/libvpu/common	    \
-    $(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
     $(TOP)/external/tremolo/Tremolo                                 \
     
 ifeq ($(BUILD_FF_PALYER),true)
@@ -75,6 +76,9 @@ LOCAL_SHARED_LIBRARIES += \
     librkffplayer
 
 LOCAL_C_INCLUDES += \
+	$(TOP)/external/ffmpeg                                          \
+    $(TOP)/frameworks/av/media/libstagefright/libvpu/common	        \
+    $(TOP)/frameworks/av/media/libstagefright/libvpu/common/include \
     $(TOP)/frameworks/av/media/rk_ffplayer
 endif 
     
