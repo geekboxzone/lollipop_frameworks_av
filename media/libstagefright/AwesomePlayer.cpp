@@ -2363,7 +2363,11 @@ void AwesomePlayer::onCheckAudioStatus() {
         mWatchForAudioEOS = false;
         modifyFlags(AUDIO_AT_EOS, SET);
         modifyFlags(FIRST_FRAME, SET);
-        postStreamDoneEvent_l(finalStatus);
+        if(mVideoTrack!=NULL && finalStatus != ERROR_END_OF_STREAM ){
+            ALOGD("======audio decode error,but play continue:%d====",finalStatus);
+        } else {
+            postStreamDoneEvent_l(finalStatus);
+        }
     }
 }
 
