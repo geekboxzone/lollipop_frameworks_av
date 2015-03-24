@@ -29,8 +29,7 @@ LOCAL_SRC_FILES :=               \
     StagefrightPlayer.cpp       \
     StagefrightRecorder.cpp     \
     TestPlayerStub.cpp          \
-    VideoFrameScheduler.cpp     \
-    ApePlayer.cpp               \
+    VideoFrameScheduler.cpp     
     
 LOCAL_SHARED_LIBRARIES :=       \
     libbinder                   \
@@ -49,12 +48,11 @@ LOCAL_SHARED_LIBRARIES :=       \
     libstagefright_omx          \
     libstagefright_wfd          \
     libutils                    \
-    libvorbisidec               \
-    libapedec                   \
+    libvorbisidec                            
 
 LOCAL_STATIC_LIBRARIES :=       \
     libstagefright_nuplayer     \
-    libstagefright_rtsp         \
+    libstagefright_rtsp         
 
 LOCAL_C_INCLUDES :=                                                 \
     external/mac  \
@@ -63,17 +61,20 @@ LOCAL_C_INCLUDES :=                                                 \
     $(TOP)/frameworks/av/media/libstagefright/wifi-display          \
     $(TOP)/frameworks/av/media/libstagefright/webm                  \
     $(TOP)/frameworks/native/include/media/openmax                  \
-    $(TOP)/external/tremolo/Tremolo                                 \
+    $(TOP)/external/tremolo/Tremolo                                 
     
 ifeq ($(BUILD_FF_PALYER),true)
 LOCAL_SRC_FILES += \
-    FFPlayer.cpp
+    FFPlayer.cpp\
+    ApePlayer.cpp
 
 LOCAL_CFLAGS +=	\
-    -DUSE_FFPLAYER
+    -DUSE_FFPLAYER\
+    -DUSE_APEPLAYER
 
 LOCAL_SHARED_LIBRARIES += \
-    librkffplayer
+    librkffplayer\
+    libapedec
 
 LOCAL_C_INCLUDES += \
 	$(TOP)/external/ffmpeg                                          \

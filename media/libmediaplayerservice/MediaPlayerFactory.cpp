@@ -437,6 +437,7 @@ public:
 };
 #endif
 
+#ifdef USE_APEPLAYER
 class ApePlayerFactory :
     public MediaPlayerFactory::IFactory {
   public:
@@ -476,6 +477,7 @@ class ApePlayerFactory :
         return new ApePlayer();
     }
 };
+#endif
 void MediaPlayerFactory::registerBuiltinFactories() {
     Mutex::Autolock lock_(&sLock);
 
@@ -486,7 +488,9 @@ void MediaPlayerFactory::registerBuiltinFactories() {
     registerFactory_l(new NuPlayerFactory(), NU_PLAYER);
     registerFactory_l(new SonivoxPlayerFactory(), SONIVOX_PLAYER);
     registerFactory_l(new TestPlayerFactory(), TEST_PLAYER);
+#ifdef USE_APEPLAYER
     registerFactory_l(new ApePlayerFactory(),APE_PLAYER);
+#endif
 #ifdef USE_FFPLAYER
 	registerFactory_l(new FFPlayerFactory(),FF_PLAYER);
 #endif
