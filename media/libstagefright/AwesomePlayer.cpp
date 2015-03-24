@@ -2688,11 +2688,15 @@ void AwesomePlayer::beginPrepareAsync_l() {
 
     if (mAudioTrack != NULL && mAudioSource == NULL) {
         status_t err = initAudioDecoder();
-
-        if (err != OK) {
-            abortPrepare(err);
-            return;
-        }
+		
+        if (err != OK && mVideoSource == NULL) {
+			if(mVideoSource != NULL) {
+				ALOGE("audio is not support but need play continue");
+			} else {
+				abortPrepare(err);
+				return;
+			}         
+		}
     }
 
     modifyFlags(PREPARING_CONNECTED, SET);
