@@ -61,7 +61,7 @@ status_t FFPlayer::setDataSource(const sp<IMediaHTTPService> &httpService,
 // the method returns, if you want to keep it, dup it!
 status_t FFPlayer::setDataSource(int fd, int64_t offset, int64_t length) {
     ALOGV("setDataSource(%d, %lld, %lld)", fd, offset, length);
-    return mPlayer->setDataSource(fd, offset, length);
+    return mPlayer->setDataSource(dup(fd), offset, length);
 }
 
 status_t FFPlayer::setDataSource(const sp<IStreamSource> &source) {
