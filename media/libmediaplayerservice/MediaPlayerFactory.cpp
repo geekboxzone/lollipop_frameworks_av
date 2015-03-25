@@ -160,6 +160,13 @@ void MediaPlayerFactory::unregisterFactory(player_type type) {
 
 player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
                                               const char* url) {
+#ifdef USE_FFPLAYER
+    if(strstr(url,".ogg"))
+    {
+        return STAGEFRIGHT_PLAYER;	
+    }
+#endif
+
     GET_PLAYER_TYPE_IMPL(client, url);
 }
 
