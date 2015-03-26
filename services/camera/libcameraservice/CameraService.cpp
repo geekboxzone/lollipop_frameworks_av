@@ -1438,13 +1438,13 @@ status_t CameraService::BasicClient::startCameraOps() {
             mClientPackageName, mOpsCallback);
     res = mAppOpsManager.startOp(AppOpsManager::OP_CAMERA,
             mClientUid, mClientPackageName);
-
+	#if 0 //commented by zyl
     if (res != AppOpsManager::MODE_ALLOWED) {
         ALOGI("Camera %d: Access for \"%s\" has been revoked",
                 mCameraId, String8(mClientPackageName).string());
         return PERMISSION_DENIED;
     }
-
+	#endif
     mOpsActive = true;
 
     // Transition device availability listeners from PRESENT -> NOT_AVAILABLE
