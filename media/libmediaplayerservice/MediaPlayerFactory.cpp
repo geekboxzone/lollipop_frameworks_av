@@ -45,6 +45,25 @@ Mutex MediaPlayerFactory::sLock;
 MediaPlayerFactory::tFactoryMap MediaPlayerFactory::sFactoryMap;
 bool MediaPlayerFactory::sInitComplete = false;
 
+static status_t getFileName(int fd,String8 *FilePath)
+{
+    static ssize_t link_dest_size;
+    static char link_dest[PATH_MAX];
+    const char *ptr = NULL;
+    String8 path;
+    path.appendFormat("/proc/%d/fd/%d", getpid(), fd);
+    if ((link_dest_size = readlink(path.string(), link_dest, sizeof(link_dest)-1)) < 0) {
+        return errno;
+    } else {
+        link_dest[link_dest_size] = '\0';
+    }
+    path = link_dest;
+    ptr = path.string();
+    *FilePath = String8(ptr);
+    return OK;
+}
+
+
 status_t MediaPlayerFactory::registerFactory_l(IFactory* factory,
                                                player_type type) {
     if (NULL == factory) {
@@ -69,7 +88,6 @@ status_t MediaPlayerFactory::registerFactory_l(IFactory* factory,
 }
 
 static player_type getDefaultPlayerType() {
-#ifndef  USE_FFPLAYER
     char value[PROPERTY_VALUE_MAX];
     char prop_value[100];
     property_get("sys.cts.capture", prop_value, "0");
@@ -90,11 +108,13 @@ static player_type getDefaultPlayerType() {
         || !strcmp(prop_value,"test_S6P00002")){
         return NU_PLAYER;
     }else{
+#ifndef  USE_FFPLAYER
         return STAGEFRIGHT_PLAYER;
-    }
 #else
-    return FF_PLAYER;
+        return FF_PLAYER;
 #endif
+
+    }
 }
 
 status_t MediaPlayerFactory::registerFactory(IFactory* factory,
@@ -160,12 +180,25 @@ void MediaPlayerFactory::unregisterFactory(player_type type) {
 
 player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
                                               const char* url) {
-#ifdef USE_FFPLAYER
-    if(strstr(url,".ogg"))
-    {
-        return STAGEFRIGHT_PLAYER;	
+    if (!strncasecmp("iptv://", url, 7)) {
+        return STAGEFRIGHT_PLAYER;
     }
-#endif
+
+    if (!strncasecmp("udpwimo", url, 7)) {
+        return STAGEFRIGHT_PLAYER;
+    }
+
+    if (!strncasecmp("DVBTV://", url, 8)) {
+        return STAGEFRIGHT_PLAYER;
+    }
+
+    if(strstr(url,".ogg")){
+        return STAGEFRIGHT_PLAYER;  
+    }
+    
+    if(strstr(url,".wvm")){
+       return STAGEFRIGHT_PLAYER;
+    }
 
     GET_PLAYER_TYPE_IMPL(client, url);
 }
@@ -174,6 +207,27 @@ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
                                               int fd,
                                               int64_t offset,
                                               int64_t length) {
+    String8 filePath;
+    getFileName(fd,&filePath);
+
+    if(strstr(filePath.string(),".apk"))
+    {
+        return STAGEFRIGHT_PLAYER;
+    }
+
+    if(strstr(filePath.string(),".tv"))
+    {
+        return STAGEFRIGHT_PLAYER;
+    } 
+
+    if(strstr(filePath.string(),".ogg")){
+        return STAGEFRIGHT_PLAYER;
+    }
+
+    if(strstr(filePath.string(),".wvm")){
+        return STAGEFRIGHT_PLAYER;
+    }
+    
     GET_PLAYER_TYPE_IMPL(client, fd, offset, length);
 }
 

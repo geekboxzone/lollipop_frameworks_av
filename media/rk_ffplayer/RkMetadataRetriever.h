@@ -11,6 +11,10 @@
 #include "vpu_api.h"
 #include "vpu_mem_pool.h"
 
+#ifdef AVS50
+#include <media/IMediaHTTPService.h>
+#endif
+
 typedef int32_t (*VpuCodecOpenCtxFactory)(VpuCodecContext **ctx);
 typedef int32_t (*VpuCodecCloseCtxFactory)(VpuCodecContext **ctx);
 typedef struct VpuCodec {
@@ -43,10 +47,16 @@ class RK_MetadataRetriever: public MediaMetadataRetrieverInterface{
 public:
     RK_MetadataRetriever();
     virtual ~RK_MetadataRetriever();
+#ifdef AVS50
+    virtual status_t setDataSource(
+            const sp<IMediaHTTPService> &httpService,
+            const char *url,
+            const KeyedVector<String8, String8> *headers= NULL);
+#else
     virtual status_t setDataSource(
             const char *url,
             const KeyedVector<String8, String8> *headers);
-
+#endif
     virtual status_t setDataSource(int fd, int64_t offset, int64_t length);
 
     virtual VideoFrame *getFrameAtTime(int64_t timeUs, int option);
