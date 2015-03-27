@@ -532,9 +532,13 @@ status_t CameraClient::cancelAutoFocus() {
 status_t CameraClient::takePicture(int msgType) {
 	int err = 0;
 	int old_msgType;
+	char camerahal_vendor[PROPERTY_VALUE_MAX];
     LOG1("takePicture (pid %d): 0x%x", getCallingPid(), msgType);
-    //disable face detetect ,prevent from deadlock ,zyc
-    //mHardware->disableMsgType(CAMERA_MSG_PREVIEW_METADATA);
+	property_get("sys_graphic.cam_hal.vendor", camerahal_vendor, "Invalidate");
+	if (strcmp(camerahal_vendor,"Intel-sofia")) {
+	    //disable face detetect ,prevent from deadlock ,zyc
+	    mHardware->disableMsgType(CAMERA_MSG_PREVIEW_METADATA);
+	}
     Mutex::Autolock lock(mLock);
     status_t result = checkPidAndHardware();
     if (result != NO_ERROR) return result;
@@ -547,9 +551,11 @@ status_t CameraClient::takePicture(int msgType) {
     }
 
 	//prevent from deadlock,zyc
-//	old_msgType = mMsgEnabled; 
-//	if(old_msgType & CAMERA_MSG_PREVIEW_FRAME)
-//		disableMsgType(CAMERA_MSG_PREVIEW_FRAME);
+	if (strcmp(camerahal_vendor,"Intel-sofia")) {
+		old_msgType = mMsgEnabled; 
+		if(old_msgType & CAMERA_MSG_PREVIEW_FRAME)
+			disableMsgType(CAMERA_MSG_PREVIEW_FRAME);
+	}
     // We only accept picture related message types
     // and ignore other types of messages for takePicture().
     int picMsgType = msgType
@@ -562,8 +568,11 @@ status_t CameraClient::takePicture(int msgType) {
     enableMsgType(picMsgType);
 
     err = mHardware->takePicture();
-//	if(old_msgType & CAMERA_MSG_PREVIEW_FRAME)
-//		enableMsgType(CAMERA_MSG_PREVIEW_FRAME);
+	if (strcmp(camerahal_vendor,"Intel-sofia")) {
+		if(old_msgType & CAMERA_MSG_PREVIEW_FRAME)
+			enableMsgType(CAMERA_MSG_PREVIEW_FRAME);
+	}
+
 	return err;
 }
 
