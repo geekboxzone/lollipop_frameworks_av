@@ -212,7 +212,7 @@ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
 
     if(strstr(filePath.string(),".apk"))
     {
-        return STAGEFRIGHT_PLAYER;
+        return NU_PLAYER;
     }
 
     if(strstr(filePath.string(),".tv"))
