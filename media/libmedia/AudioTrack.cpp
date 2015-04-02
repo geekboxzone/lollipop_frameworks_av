@@ -929,6 +929,7 @@ audio_stream_type_t AudioTrack::streamType() const
 // must be called with mLock held
 status_t AudioTrack::createTrack_l()
 {
+
     const sp<IAudioFlinger>& audioFlinger = AudioSystem::get_audio_flinger();
     if (audioFlinger == 0) {
         ALOGE("Could not get audioflinger");
@@ -1057,7 +1058,9 @@ status_t AudioTrack::createTrack_l()
         }
 
         size_t minFrameCount = afFrameCount * minBufCount * uint64_t(mSampleRate) / afSampleRate;
-        ALOGV("minFrameCount: %zu, afFrameCount=%zu, minBufCount=%d, sampleRate=%u, afSampleRate=%u"
+        if(mFlags & AUDIO_OUTPUT_FLAG_DIRECT)
+            minFrameCount = afFrameCount*minBufCount;
+        ALOGI("minFrameCount: %zu, afFrameCount=%zu, minBufCount=%d, sampleRate=%u, afSampleRate=%u"
                 ", afLatency=%d",
                 minFrameCount, afFrameCount, minBufCount, mSampleRate, afSampleRate, afLatency);
 
@@ -1068,6 +1071,7 @@ status_t AudioTrack::createTrack_l()
             ALOGV("Minimum buffer size corrected from %zu to %zu",
                      frameCount, minFrameCount);
             frameCount = minFrameCount;
+            mNotificationFramesAct = frameCount/2;
         }
         // Make sure that application is notified with sufficient margin before underrun
         if (mNotificationFramesAct == 0 || mNotificationFramesAct > frameCount/nBuffering) {

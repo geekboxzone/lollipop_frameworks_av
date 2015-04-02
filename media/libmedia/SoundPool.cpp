@@ -20,7 +20,7 @@
 #include <inttypes.h>
 
 #include <utils/Log.h>
-
+#include <cutils/properties.h>
 #define USE_SHARED_MEM_BUFFER
 
 #include <media/AudioTrack.h>
@@ -251,6 +251,13 @@ int SoundPool::play(int sampleID, float leftVolume, float rightVolume,
 
     if (mQuit) {
         return 0;
+    }
+
+    char value[PROPERTY_VALUE_MAX] = "";
+    property_get("media.cfg.audio.bypass", value, "-1");
+    if (memcmp(value, "true", 4) == 0) {
+         //ALOGD("do not play soundeffect...");
+         return 0;
     }
     // is sample ready?
     sample = findSample(sampleID);

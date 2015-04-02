@@ -853,7 +853,9 @@ sp<AudioPolicyManager::IOProfile> AudioPolicyManager::getProfileForDirectOutput(
                                                                audio_channel_mask_t channelMask,
                                                                audio_output_flags_t flags)
 {
-    for (size_t i = 0; i < mHwModules.size(); i++) {
+	if ((flags & AUDIO_OUTPUT_FLAG_DIRECT) && (device & AUDIO_DEVICE_OUT_SPEAKER))
+		device &= ~AUDIO_DEVICE_OUT_SPEAKER;
+	for (size_t i = 0; i < mHwModules.size(); i++) {
         if (mHwModules[i]->mHandle == 0) {
             continue;
         }
@@ -1068,7 +1070,6 @@ audio_io_handle_t AudioPolicyManager::getOutputForDevice(
     // FIXME: We should check the audio session here but we do not have it in this context.
     // This may prevent offloading in rare situations where effects are left active by apps
     // in the background.
-
     if (((flags & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) == 0) ||
             !isNonOffloadableEffectEnabled()) {
         profile = getProfileForDirectOutput(device,
@@ -4566,37 +4567,48 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
 	cardStrategy = atoi(value);
 	property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 	property_set(MEDIA_CFG_AUDIO_MUL, "false");
-	sp<DeviceDescriptor> devDesc = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_SPDIF);
-	ssize_t index = mAvailableOutputDevices.indexOf(devDesc);
+	sp<DeviceDescriptor> devDesc_spdif = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_SPDIF);
+	sp<DeviceDescriptor> devDesc_hdmi = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_AUX_DIGITAL);
+	ssize_t index_spdif = mAvailableOutputDevices.indexOf(devDesc_spdif);
+	ssize_t index_hdmi = mAvailableOutputDevices.indexOf(devDesc_hdmi);
+	
 	ALOGV("cardStrategy = %d , hasSpdif() = %d", cardStrategy,hasSpdif());
 	switch (cardStrategy) {
 	case CARDSDEFAULT:
-		if(hasSpdif() && (index < 0))
+		if(hasSpdif() && (index_spdif < 0))
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_AVAILABLE, "");
-		else if (!hasSpdif() && (index >= 0))
+		else if (!hasSpdif() && (index_spdif >= 0))
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE, "");
+		if(index_hdmi < 0)
+			setDeviceConnectionState(AUDIO_DEVICE_OUT_AUX_DIGITAL,AUDIO_POLICY_DEVICE_STATE_AVAILABLE,"");
+		property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 		break;
 	case CARDSTRATEGYHDMIMUL:
 		break;
 	case CARDSTRATEGYSPDIF:
 	case CARDSTRATEGYSPDIFPR:
-		if(hasSpdif() && (index < 0))
+		if(hasSpdif() && (index_spdif < 0))
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_AVAILABLE, "");
+		if (index_hdmi >= 0)
+			setDeviceConnectionState(AUDIO_DEVICE_OUT_AUX_DIGITAL,AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE,"");
 		if(cardStrategy==CARDSTRATEGYSPDIFPR)
 			property_set(MEDIA_CFG_AUDIO_BYPASS, "true");
 		else
 			property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 		break;
 	case CARDSTRATEGYHDMIBS:
-		if(hasSpdif() && (index >= 0))
+		if(hasSpdif() && (index_spdif >= 0))
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE, "");
+		if(index_hdmi < 0)
+			setDeviceConnectionState(AUDIO_DEVICE_OUT_AUX_DIGITAL,AUDIO_POLICY_DEVICE_STATE_AVAILABLE,"");
 		property_set(MEDIA_CFG_AUDIO_BYPASS, "true");
 		break;
 	default:
-		if(hasSpdif() && (index < 0))
+		if(hasSpdif() && (index_spdif < 0))
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_AVAILABLE, "");
 		property_set(MEDIA_AUDIO_CURRENTPB, "0");
 		property_set(MEDIA_AUDIO_LASTPB, "0");
+		property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 		break;
 	}
 	system("sync");
