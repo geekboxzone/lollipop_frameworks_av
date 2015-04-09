@@ -303,6 +303,9 @@ status_t SampleTable::setSampleToChunkParams(
         return ERROR_MALFORMED;
     }
 
+    if (SIZE_MAX / sizeof(SampleToChunkEntry) <= mNumSampleToChunkOffsets)
+        return ERROR_OUT_OF_RANGE;
+
     mSampleToChunkEntries =
         new (std::nothrow) SampleToChunkEntry[mNumSampleToChunkOffsets];
     if (!mSampleToChunkEntries)
