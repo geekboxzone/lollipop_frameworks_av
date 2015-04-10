@@ -2745,7 +2745,7 @@ void OMXCodec::onCmdComplete(OMX_COMMANDTYPE cmd, OMX_U32 data) {
 
             if (mState == RECONFIGURING) {
                 CHECK_EQ(portIndex, (OMX_U32)kPortIndexOutput);
-#if 0
+
                 sp<MetaData> oldOutputFormat = mOutputFormat;
                 initOutputFormat(mSource->getFormat());
 
@@ -2756,7 +2756,7 @@ void OMXCodec::onCmdComplete(OMX_COMMANDTYPE cmd, OMX_U32 data) {
                 if (!mOutputPortSettingsHaveChanged) {
                     mOutputPortSettingsHaveChanged = formatChanged;
                 }
-#endif
+
 
                 status_t err = enablePortAsync(portIndex);
                 if (err != OK) {
@@ -4167,9 +4167,9 @@ status_t OMXCodec::read(
     }
 retry:
     while (mState != ERROR && !mNoMoreOutputData && mFilledBuffers.empty()) {
-        if (mOutputPortSettingsHaveChanged) {
+        if (mOutputPortSettingsHaveChanged && !strstr(mComponentName,"OMX.Intel.")) {
             mOutputPortSettingsHaveChanged = false;
-            ALOGI("found informat change");
+            ALOGI("found informat change ComponentName = %s",mComponentName);
             return INFO_FORMAT_CHANGED;
         }
         if ((err = waitForBufferFilled_l()) != OK) {
