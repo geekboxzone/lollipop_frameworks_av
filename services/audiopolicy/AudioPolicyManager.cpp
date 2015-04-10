@@ -4522,7 +4522,7 @@ uint32_t AudioPolicyManager::setBeaconMute(bool mute) {
     ALOGV("setBeaconMute(%d) mBeaconMuteRefCount=%d mBeaconPlayingRefCount=%d",
             mute, mBeaconMuteRefCount, mBeaconPlayingRefCount);
     // keep track of muted state to avoid repeating mute/unmute operations
-    if (mBeaconMuted != mute) {
+    if (mBeaconMuted != mute && mBeaconPlayingRefCount > 0) {
         // mute/unmute AUDIO_STREAM_TTS on all outputs
         ALOGV("\t muting %d", mute);
         uint32_t maxLatency = 0;
