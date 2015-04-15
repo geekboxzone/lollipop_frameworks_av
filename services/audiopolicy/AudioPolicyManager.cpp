@@ -4577,8 +4577,6 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_AVAILABLE, "");
 		else if (!hasSpdif() && (index_spdif >= 0))
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE, "");
-		if(index_hdmi < 0)
-			setDeviceConnectionState(AUDIO_DEVICE_OUT_AUX_DIGITAL,AUDIO_POLICY_DEVICE_STATE_AVAILABLE,"");
 		property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 		break;
 	case CARDSTRATEGYHDMIMUL:
@@ -4593,8 +4591,6 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
 			property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 		break;
 	case CARDSTRATEGYHDMIBS:
-		if(index_hdmi < 0)
-			setDeviceConnectionState(AUDIO_DEVICE_OUT_AUX_DIGITAL,AUDIO_POLICY_DEVICE_STATE_AVAILABLE,"");
 		property_set(MEDIA_CFG_AUDIO_BYPASS, "true");
 		break;
 	default:
