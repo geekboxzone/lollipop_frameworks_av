@@ -16,9 +16,19 @@
 #include "gralloc_priv.h"
 
 namespace android {
-
+//#define RGBA_TEST_FILE
 #define ASYNC_RGA 1
 #define SURFACE_ORIGINAL_SIZE 1
+
+/* Using for the repeatersource rate statistic*/
+//#define REPEATERSOURCE_RATE_STATISTIC
+#ifdef REPEATERSOURCE_RATE_STATISTIC
+#define STATISTIC_PER_TIME 5  // statistic once per 5s
+static int64_t lastRepeaterSourceTime = 0;
+static int64_t currentRepeaterSourceTime = 0;
+static int32_t lastRepeaterSourceFrameCount = 0;
+static int32_t currentRepeaterSourceFrameCount = 0;
+#endif
 
 FILE* omx_txt;
 
@@ -74,7 +84,12 @@ void RepeaterSource::setFrameRate(double rateHz) {
 
 status_t RepeaterSource::start(MetaData *params) {
     CHECK(!mStarted);
-
+#ifdef REPEATERSOURCE_RATE_STATISTIC
+    lastRepeaterSourceTime = 0;
+    currentRepeaterSourceTime = 0;
+    lastRepeaterSourceFrameCount = 0;
+    currentRepeaterSourceFrameCount = 0;
+#endif
     status_t err = mSource->start(params);
 
     if (err != OK) {
@@ -182,6 +197,7 @@ status_t RepeaterSource::read(
         MediaBuffer **buffer, const ReadOptions *options) {
     int64_t seekTimeUs;
     ReadOptions::SeekMode seekMode;
+    int delayUs = 0;
     CHECK(options == NULL || !options->getSeekTo(&seekTimeUs, &seekMode));
     while (mStarted && mNumPendingBuffers == maxbuffercount) {
         Mutex::Autolock autoLock(mLock);
@@ -190,7 +206,10 @@ status_t RepeaterSource::read(
 
     for (;;) {
         int64_t bufferTimeUs = -1ll;
-
+        if(delayUs > 0ll) {
+            usleep(delayUs);
+            delayUs = 0;
+        }
         if (mStartTimeUs < 0ll) {
             Mutex::Autolock autoLock(mLock);
             while ((mLastBufferUpdateUs < 0ll || mBuffer == NULL)
@@ -199,8 +218,7 @@ status_t RepeaterSource::read(
             }
 
             ALOGV("now resuming.");
-            mBuffer->meta_data()->findInt64(kKeyTime, &mStartTimeUs);
-            bufferTimeUs = mStartTimeUs;
+            mStartTimeUs = ALooper::GetNowUs();
         }
 
         bool stale = false;
@@ -211,8 +229,11 @@ status_t RepeaterSource::read(
                 CHECK(mBuffer == NULL);
                 return mResult;
             }
-            if(bufferTimeUs == -1ll)
-                mBuffer->meta_data()->findInt64(kKeyTime, &bufferTimeUs);
+            delayUs = mStartTimeUs + (mFrameCount * 1000000ll) / mRateHz - ALooper::GetNowUs();
+            if(delayUs > 0ll) {
+                continue;
+            }
+            mBuffer->meta_data()->findInt64(kKeyTime, &bufferTimeUs);
 #if SUSPEND_VIDEO_IF_IDLE
             int64_t nowUs = ALooper::GetNowUs();
             if (nowUs - mLastBufferUpdateUs > 1000000ll) {
@@ -256,67 +277,6 @@ status_t RepeaterSource::read(
                     mUsingTimeUs = mCurTimeUs;
                 }
 #endif
-                if(VPUMemJudgeIommu() == 0 && mCurTimeUs != mUsingTimeUs) {
-                    const Rect rect(mWidth, mHeight);
-                    uint8_t *img=NULL;
-                    int res = GraphicBufferMapper::get().lock(handle,
-                                GRALLOC_USAGE_SW_READ_MASK,//GRALLOC_USAGE_HW_VIDEO_ENCODER,
-                                rect, (void**)&img);
-
-                    if (res != OK) {
-                        ALOGE("%s: Unable to lock image buffer %p for access", __FUNCTION__,
-                            *((long*)(mBuffer->data()+16)));
-                        GraphicBufferMapper::get().unlock(handle);
-                        return res;
-                    }
-                    else {
-                        if(rga_fd < 0) {
-                            ALOGD("memcpy");
-                            memcpy(((VPUMemLinear_t*) vpuenc_mem[vpu_mem_index])->vir_addr,img,mWidth * mHeight * 4);
-                        } else {
-                            struct rga_req	Rga_Request;
-                            memset(&Rga_Request,0x0,sizeof(Rga_Request));
-                            Rga_Request.src.yrgb_addr =mHandle->share_fd;
-                            Rga_Request.src.uv_addr  =0;
-                            Rga_Request.src.v_addr	 =	0;
-                            Rga_Request.src.vir_w = mHandle->stride;
-                            Rga_Request.src.vir_h = mHeight;
-                            Rga_Request.src.format = RK_FORMAT_RGBA_8888;
-                            Rga_Request.src.act_w = mWidth;
-                            Rga_Request.src.act_h = mHeight;
-                            Rga_Request.src.x_offset = 0;
-                            Rga_Request.src.y_offset = 0;
-                            Rga_Request.dst.yrgb_addr =0;
-                            Rga_Request.dst.uv_addr  = (int)((VPUMemLinear_t*) vpuenc_mem[vpu_mem_index])->phy_addr;
-                            Rga_Request.dst.v_addr	 = 0;
-                            Rga_Request.dst.vir_w = (mWidth + 15)&(~15);
-                            Rga_Request.dst.vir_h = mHeight;
-                            Rga_Request.dst.format = Rga_Request.src.format;
-                            Rga_Request.dst.act_w = mWidth;
-                            Rga_Request.dst.act_h = mHeight;
-                            Rga_Request.dst.x_offset = 0;
-                            Rga_Request.dst.y_offset = 0;
-                            Rga_Request.clip.xmin = 0;
-                            Rga_Request.clip.xmax = (mWidth + 15)&(~15) - 1;
-                            Rga_Request.clip.ymin = 0;
-                            Rga_Request.clip.ymax = mHeight - 1;
-#if SURFACE_ORIGINAL_SIZE
-                            Rga_Request.rotate_mode = 0;
-#else
-                            Rga_Request.rotate_mode = 1;
-                            Rga_Request.scale_mode = 1;
-                            Rga_Request.sina = 0;
-                            Rga_Request.cosa = 65536;
-#endif
-                            int ret;
-                            if(ret=ioctl(rga_fd, RGA_BLIT_ASYNC, &Rga_Request) != 0) {
-                                ALOGE("RepeaterSource rga RGA_BLIT_SYNC fail %x ret %d",ret);
-                            } 
-                        }
-                    }
-                    GraphicBufferMapper::get().unlock(handle);
-                    mUsingTimeUs = mCurTimeUs;
-                }
                 (*buffer)->setObserver(this);
 	            (*buffer)->add_ref();
                 mNumPendingBuffers++;
@@ -338,6 +298,19 @@ status_t RepeaterSource::read(
         }
 
         if (!stale) {
+#ifdef REPEATERSOURCE_RATE_STATISTIC
+            currentRepeaterSourceTime = ALooper::GetNowUs();
+            if(lastRepeaterSourceTime != 0) {
+                ++currentRepeaterSourceFrameCount;
+                if(currentRepeaterSourceTime - lastRepeaterSourceTime >= (STATISTIC_PER_TIME * 1000000)) {
+				    ALOGE("Statistic RepeaterSource Rate %d lastEncodeFrameCount %d currentEncodeFrameCount %d", ((currentRepeaterSourceFrameCount - lastRepeaterSourceFrameCount) / STATISTIC_PER_TIME), lastRepeaterSourceFrameCount, currentRepeaterSourceFrameCount);
+                    lastRepeaterSourceTime = currentRepeaterSourceTime;
+                    lastRepeaterSourceFrameCount = currentRepeaterSourceFrameCount;
+                }
+            }
+            else
+                lastRepeaterSourceTime = currentRepeaterSourceTime;
+#endif
             break;
         }
 
