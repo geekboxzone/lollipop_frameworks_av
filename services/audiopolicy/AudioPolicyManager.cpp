@@ -4568,9 +4568,7 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
 	property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 	property_set(MEDIA_CFG_AUDIO_MUL, "false");
 	sp<DeviceDescriptor> devDesc_spdif = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_SPDIF);
-	sp<DeviceDescriptor> devDesc_hdmi = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_AUX_DIGITAL);
 	ssize_t index_spdif = mAvailableOutputDevices.indexOf(devDesc_spdif);
-	ssize_t index_hdmi = mAvailableOutputDevices.indexOf(devDesc_hdmi);
 	
 	ALOGV("cardStrategy = %d , hasSpdif() = %d", cardStrategy,hasSpdif());
 	switch (cardStrategy) {
@@ -4589,16 +4587,12 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
 	case CARDSTRATEGYSPDIFPR:
 		if(hasSpdif() && (index_spdif < 0))
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_AVAILABLE, "");
-		if (index_hdmi >= 0)
-			setDeviceConnectionState(AUDIO_DEVICE_OUT_AUX_DIGITAL,AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE,"");
 		if(cardStrategy==CARDSTRATEGYSPDIFPR)
 			property_set(MEDIA_CFG_AUDIO_BYPASS, "true");
 		else
 			property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 		break;
 	case CARDSTRATEGYHDMIBS:
-		if(hasSpdif() && (index_spdif >= 0))
-			setDeviceConnectionState(AUDIO_DEVICE_OUT_SPDIF, AUDIO_POLICY_DEVICE_STATE_UNAVAILABLE, "");
 		if(index_hdmi < 0)
 			setDeviceConnectionState(AUDIO_DEVICE_OUT_AUX_DIGITAL,AUDIO_POLICY_DEVICE_STATE_AVAILABLE,"");
 		property_set(MEDIA_CFG_AUDIO_BYPASS, "true");
