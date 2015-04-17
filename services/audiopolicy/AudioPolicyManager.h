@@ -828,6 +828,10 @@ protected:
         KeyedVector<int, sp<EffectDescriptor> > mEffects;  // list of registered audio effects
         bool    mA2dpSuspended;  // true if A2DP output is suspended
         sp<DeviceDescriptor> mDefaultOutputDevice; // output device selected by default at boot time
+#ifdef BOX_STRATEGY
+        sp<DeviceDescriptor> mHDMIOutputDevice;
+        sp<DeviceDescriptor> mSPDIFOutputDevice;
+#endif
         bool mSpeakerDrcEnabled;// true on devices that use DRC on the DEVICE_CATEGORY_SPEAKER path
                                 // to boost soft sounds, used to adjust volume curves accordingly
 
