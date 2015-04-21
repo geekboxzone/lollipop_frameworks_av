@@ -229,6 +229,18 @@ static bool IsSoftwareCodec(const char *componentName) {
     return true;
 }
 
+static bool IsIntelCodec(const char *componentName) {
+    if (!strncmp("OMX.Intel.", componentName, 10)) {
+        return true;
+    }
+
+    if (!strncmp("OMX.", componentName, 4)) {
+        return false;
+    }
+
+    return true;
+}
+
 // A sort order in which OMX software codecs are first, followed
 // by other (non-OMX) software codecs, followed by everything else.
 static int CompareSoftwareCodecsFirst(
@@ -262,6 +274,42 @@ static int CompareSoftwareCodecsFirst(
 
     return 0;
 }
+
+// A sort order in which OMX Intel codecs are first, followed
+// by other (non-OMX) software codecs, followed by everything else.
+static int CompareIntelCodecsFirst(
+        const OMXCodec::CodecNameAndQuirks *elem1,
+        const OMXCodec::CodecNameAndQuirks *elem2) {
+    bool isOMX1 = !strncmp(elem1->mName.string(), "OMX.", 4);
+    bool isOMX2 = !strncmp(elem2->mName.string(), "OMX.", 4);
+
+    bool isSoftwareCodec1 = IsIntelCodec(elem1->mName.string());
+    bool isSoftwareCodec2 = IsIntelCodec(elem2->mName.string());
+
+    if (isSoftwareCodec1) {
+        if (!isSoftwareCodec2) { return -1; }
+
+        if (isOMX1) {
+            if (isOMX2) { return 0; }
+
+            return -1;
+        } else {
+            if (isOMX2) { return 0; }
+
+            return 1;
+        }
+
+        return -1;
+    }
+
+    if (isSoftwareCodec2) {
+        return 1;
+    }
+
+    return 0;
+}
+
+
 
 // static
 void OMXCodec::findMatchingCodecs(
@@ -314,8 +362,13 @@ void OMXCodec::findMatchingCodecs(
         }
     }
 
-    if (flags & kPreferSoftwareCodecs) {
-        matchingCodecs->sort(CompareSoftwareCodecsFirst);
+	//default sort the intel codec first,and it is not avalid for rk platform
+	if(!createEncoder){
+  		 matchingCodecs->sort(CompareIntelCodecsFirst);
+	}
+	
+	if (flags & kPreferSoftwareCodecs) {
+		matchingCodecs->sort(CompareSoftwareCodecsFirst);
     }
 }
 
@@ -384,6 +437,7 @@ sp<MediaSource> OMXCodec::Create(
     findMatchingCodecs(
             mime, createEncoder, matchComponentName, flags, &matchingCodecs);
 
+	
     if (matchingCodecs.isEmpty()) {
         ALOGV("No matching codecs! (mime: %s, createEncoder: %s, "
                 "matchComponentName: %s, flags: 0x%x)",
@@ -398,7 +452,7 @@ sp<MediaSource> OMXCodec::Create(
         const char *componentNameBase = matchingCodecs[i].mName.string();
         uint32_t quirks = matchingCodecs[i].mQuirks;
         const char *componentName = componentNameBase;
-
+		
         AString tmp;
         if (flags & kUseSecureInputBuffers) {
             tmp = componentNameBase;
