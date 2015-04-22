@@ -853,8 +853,12 @@ sp<AudioPolicyManager::IOProfile> AudioPolicyManager::getProfileForDirectOutput(
                                                                audio_channel_mask_t channelMask,
                                                                audio_output_flags_t flags)
 {
+#ifdef BOX_STRATEGY
+	if(flags != AUDIO_OUTPUT_FLAG_DIRECT)
+		return 0;
 	if ((flags & AUDIO_OUTPUT_FLAG_DIRECT) && (device & AUDIO_DEVICE_OUT_SPEAKER))
 		device &= ~AUDIO_DEVICE_OUT_SPEAKER;
+#endif
 	for (size_t i = 0; i < mHwModules.size(); i++) {
         if (mHwModules[i]->mHandle == 0) {
             continue;
@@ -3095,22 +3099,12 @@ AudioPolicyManager::AudioPolicyManager(AudioPolicyClientInterface *clientInterfa
         mForceUse[i] = AUDIO_POLICY_FORCE_NONE;
     }
 
-    mDefaultOutputDevice = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_SPEAKER);
 #ifdef BOX_STRATEGY
     mHDMIOutputDevice = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_AUX_DIGITAL);
     mSPDIFOutputDevice = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_SPDIF);
 
     mHDMIOutputDevice->mAddress = "";
     mSPDIFOutputDevice->mAddress = "";
-#endif
-    if (loadAudioPolicyConfig(AUDIO_POLICY_VENDOR_CONFIG_FILE) != NO_ERROR) {
-        if (loadAudioPolicyConfig(AUDIO_POLICY_CONFIG_FILE) != NO_ERROR) {
-            ALOGE("could not load audio policy configuration file, setting defaults");
-            defaultAudioPolicyConfig();
-        }
-    }
-
-#ifdef BOX_STRATEGY
 	#define CARDSDEFAULT		0
 	#define CARDSTRATEGYSPDIF	1
 	#define CARDSTRATEGYBOTH	9
@@ -3131,7 +3125,7 @@ AudioPolicyManager::AudioPolicyManager(AudioPolicyClientInterface *clientInterfa
 	property_set(MEDIA_CFG_AUDIO_BYPASS, "false");
 	property_set(MEDIA_CFG_AUDIO_MUL, "false");
 
-	ALOGV("cardStrategy = %d , hasSpdif() = %d", cardStrategy,hasSpdif());
+	ALOGD("cardStrategy = %d , hasSpdif() = %d", cardStrategy,hasSpdif());
 	switch (cardStrategy) {
 	case CARDSDEFAULT:
 		if(hasSpdif())
@@ -3170,7 +3164,16 @@ AudioPolicyManager::AudioPolicyManager(AudioPolicyClientInterface *clientInterfa
 	}
 	system("sync");
 #endif
+
+    mDefaultOutputDevice = new DeviceDescriptor(String8(""), AUDIO_DEVICE_OUT_SPEAKER);
+
     // mAvailableOutputDevices and mAvailableInputDevices now contain all attached devices
+    if (loadAudioPolicyConfig(AUDIO_POLICY_VENDOR_CONFIG_FILE) != NO_ERROR) {
+        if (loadAudioPolicyConfig(AUDIO_POLICY_CONFIG_FILE) != NO_ERROR) {
+            ALOGE("could not load audio policy configuration file, setting defaults");
+            defaultAudioPolicyConfig();
+        }
+    }
 
     // must be done after reading the policy
     initializeVolumeCurves();
@@ -3661,6 +3664,10 @@ status_t AudioPolicyManager::checkOutputsForDevice(const sp<DeviceDescriptor> de
                 continue;
             }
 
+            if (profile->mFlags & AUDIO_OUTPUT_FLAG_DIRECT){
+                ALOGE("profile->mFlags: AUDIO_OUTPUT_FLAG_DIRECT");
+                continue;
+            }
             ALOGV("opening output for device %08x with params %s profile %p",
                                                       device, address.string(), profile.get());
             desc = new AudioOutputDescriptor(profile);
@@ -4782,7 +4789,7 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
         // except:
         //   - when in call where it doesn't default to STRATEGY_PHONE behavior
         //   - in countries where not enforced in which case it follows STRATEGY_MEDIA
-
+#ifndef BOX_STRATEGY
         if ((strategy == STRATEGY_SONIFICATION) ||
                 (mForceUse[AUDIO_POLICY_FORCE_FOR_SYSTEM] == AUDIO_POLICY_FORCE_SYSTEM_ENFORCED)) {
             device = availableOutputDeviceTypes & AUDIO_DEVICE_OUT_SPEAKER;
@@ -4790,6 +4797,7 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
                 ALOGE("getDeviceForStrategy() speaker device not found for STRATEGY_SONIFICATION");
             }
         }
+#endif
         // The second device used for sonification is the same as the device used by media strategy
         // FALL THROUGH
 
@@ -4896,7 +4904,6 @@ audio_devices_t AudioPolicyManager::getDeviceForStrategy(routing_strategy strate
         ALOGW("getDeviceForStrategy() unknown strategy: %d", strategy);
         break;
     }
-
     ALOGVV("getDeviceForStrategy() strategy %d, device %x", strategy, device);
     return device;
 }
