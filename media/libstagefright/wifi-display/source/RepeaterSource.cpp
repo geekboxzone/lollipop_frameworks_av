@@ -12,10 +12,12 @@
 #include <ui/GraphicBufferMapper.h>
 #include <ui/Rect.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include "rga.h"
 #include "gralloc_priv.h"
 
 namespace android {
+//#define TIMEUS_FOR_TEST 1
 //#define RGBA_TEST_FILE
 #define ASYNC_RGA 1
 #define SURFACE_ORIGINAL_SIZE 1
@@ -99,19 +101,19 @@ status_t RepeaterSource::start(MetaData *params) {
 #if ASYNC_RGA
     CHECK(mSource->getFormat()->findInt32(kKeyWidth, &mWidth));
     CHECK(mSource->getFormat()->findInt32(kKeyHeight, &mHeight));
+    ALOGI("mWidth=%d, mHeight=%d", mWidth, mHeight);
     rga_fd  = open("/dev/rga",O_RDWR,0);
     if(rga_fd < 0)
     {
         ALOGE("Rga device open failed!");
         return rga_fd;
     }
-    for(int i = 0; i < maxbuffercount; i++)
-    {
-        vpuenc_mem[i] = (VPUMemLinear_t*)malloc(sizeof( VPUMemLinear_t)); 
-        ALOGD("mWidth %d mHeight %d",mWidth,mHeight);
+
+    for(int i = 0; i < maxbuffercount; i++) {
+        vpuenc_mem[i] = (VPUMemLinear_t*)malloc(sizeof( VPUMemLinear_t));
+        ALOGD("mWidth %d mHeight %d", mWidth, mHeight);
         err = VPUMallocLinear((VPUMemLinear_t*)vpuenc_mem[i], ((mWidth + 15) & 0xfff0) * mHeight * 4);
-        if(err)
-        {
+        if (err) {
             ALOGD("err  %dtemp->phy_addr %x mWidth %d mHeight %d", err, ((VPUMemLinear_t*)vpuenc_mem[i])->phy_addr, mWidth, mHeight);
             return err;
         }
@@ -164,23 +166,20 @@ status_t RepeaterSource::stop() {
     mStarted = false;
     {
         Mutex::Autolock autoLock(mLock);
-        while(mNumPendingBuffers>0) {
+        while (mNumPendingBuffers > 0) {
             mMediaBuffersAvailableCondition.wait(mLock);
         }
         mMediaBuffersAvailableCondition.broadcast();
     }
 
 #if ASYNC_RGA
-    for(int i = 0; i < maxbuffercount; i++)
-    {
-        if(vpuenc_mem[i]!=NULL)
-        {
+    for (int i = 0; i < maxbuffercount; i++) {
+        if (vpuenc_mem[i] != NULL) {
             VPUFreeLinear((VPUMemLinear_t*)vpuenc_mem[i]);
             free((VPUMemLinear_t*)vpuenc_mem[i]);
         }
     }
-    if(rga_fd > 0)
-    {
+    if (rga_fd > 0) {
         close(rga_fd);
         rga_fd = -1;
     }
@@ -197,19 +196,15 @@ status_t RepeaterSource::read(
         MediaBuffer **buffer, const ReadOptions *options) {
     int64_t seekTimeUs;
     ReadOptions::SeekMode seekMode;
-    int delayUs = 0;
+
     CHECK(options == NULL || !options->getSeekTo(&seekTimeUs, &seekMode));
-    while (mStarted && mNumPendingBuffers == maxbuffercount) {
-        Mutex::Autolock autoLock(mLock);
-        mMediaBuffersAvailableCondition.wait(mLock);
-    }
 
     for (;;) {
         int64_t bufferTimeUs = -1ll;
-        if(delayUs > 0ll) {
-            usleep(delayUs);
-            delayUs = 0;
-        }
+#ifdef TIMEUS_FOR_TEST
+        int64_t frameBufferTimeUs = -1ll;
+#endif
+        
         if (mStartTimeUs < 0ll) {
             Mutex::Autolock autoLock(mLock);
             while ((mLastBufferUpdateUs < 0ll || mBuffer == NULL)
@@ -219,6 +214,16 @@ status_t RepeaterSource::read(
 
             ALOGV("now resuming.");
             mStartTimeUs = ALooper::GetNowUs();
+            bufferTimeUs = mStartTimeUs;
+        } else {
+            bufferTimeUs = mStartTimeUs + (mFrameCount * 1000000ll) / mRateHz;
+
+            int64_t nowUs = ALooper::GetNowUs();
+            int64_t delayUs = bufferTimeUs - nowUs;
+
+            if (delayUs > 0ll) {
+                usleep(delayUs);
+            }
         }
 
         bool stale = false;
@@ -229,11 +234,7 @@ status_t RepeaterSource::read(
                 CHECK(mBuffer == NULL);
                 return mResult;
             }
-            delayUs = mStartTimeUs + (mFrameCount * 1000000ll) / mRateHz - ALooper::GetNowUs();
-            if(delayUs > 0ll) {
-                continue;
-            }
-            mBuffer->meta_data()->findInt64(kKeyTime, &bufferTimeUs);
+
 #if SUSPEND_VIDEO_IF_IDLE
             int64_t nowUs = ALooper::GetNowUs();
             if (nowUs - mLastBufferUpdateUs > 1000000ll) {
@@ -285,6 +286,11 @@ status_t RepeaterSource::read(
                 vpu_mem_index++;
                 vpu_mem_index %= maxbuffercount;
                 (*buffer)->meta_data()->setInt64(kKeyTime, bufferTimeUs);
+#ifdef TIMEUS_FOR_TEST
+                mBuffer->meta_data()->findInt64(kKeyTime, &frameBufferTimeUs);
+                ALOGD("RepeaterSource Video  bufferTimeUs %" PRId64 "  frameBufferTimeUs  %" PRId64 "  delta  %" PRId64,
+                      bufferTimeUs, frameBufferTimeUs, (bufferTimeUs - frameBufferTimeUs));
+#endif
                 ++mFrameCount;
             }
 #else
@@ -375,7 +381,7 @@ void RepeaterSource::signalBufferReturned(MediaBuffer *buffer) {
     int	retrtptxt;
     if((retrtptxt = access("data/test/omx_txt_file",0)) == 0)
     {
-        int	sys_time = systemTime(SYSTEM_TIME_MONOTONIC) / 1000;		
+        int64_t	sys_time = systemTime(SYSTEM_TIME_MONOTONIC) / 1000;		
         if(omx_txt == NULL)
             omx_txt = fopen("data/test/omx_txt.txt","ab");
         if(omx_txt != NULL)

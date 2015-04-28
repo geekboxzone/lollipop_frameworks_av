@@ -66,14 +66,14 @@ private:
     int32_t mFrameCount;
 	
 	int32_t rga_fd;
-	int maxbuffercount;
+	int32_t maxbuffercount;
     VPUMemLinear_t 	*vpuenc_mem[2];
-    int mWidth;
-    int	mHeight;
     int64_t mUsingTimeUs;
     int64_t	mCurTimeUs;
     int vpu_mem_index;
     int mNumPendingBuffers;
+    int32_t mWidth;
+    int32_t mHeight;
     Condition mMediaBuffersAvailableCondition;
     FILE *mRGBAFile;
 
