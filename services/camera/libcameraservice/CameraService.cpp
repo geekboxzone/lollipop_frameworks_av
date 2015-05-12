@@ -639,7 +639,23 @@ bool CameraService::canConnectUnsafe(int cameraId,
                 // multiple shared clients here
                 ALOGW("CameraService::connect X (pid %d) rejected"
                       " (existing client).", callingPid);
-                return false;
+				
+				Vector<sp<ICameraServiceListener> >::const_iterator it;
+       			for (it = mListenerList.begin(); it != mListenerList.end(); ++it) {
+					ALOGV("onStatusChanged in++++");
+            		(*it)->onStatusChanged((ICameraServiceListener::Status)0x80000001, 0);
+        		}
+
+				
+				ALOGD("mFlashCondition wait....");
+				mFlashLock.lock();		
+				mFlashCondition.wait(mServiceLock);
+				mFlashLock.unlock();
+				mServiceLock.unlock();
+				
+				ALOGD("updateStatus out.");
+				
+                return true;
             }
         }
         mClient[cameraId].clear();
@@ -1309,8 +1325,10 @@ void CameraService::setCameraBusy(int cameraId) {
 
 void CameraService::setCameraFree(int cameraId) {
     android_atomic_write(0, &mBusy[cameraId]);
-
-    ALOGV("setCameraFree cameraId=%d", cameraId);
+	if(cameraId == 0 ) {
+		sendSignal();
+	}
+    ALOGV("setCameraFree cameraId=%d end", cameraId);
 }
 
 // We share the media players for shutter and recording sound for all clients.
@@ -1359,6 +1377,18 @@ void CameraService::playSound(sound_kind kind) {
         player->seekTo(0);
         player->start();
     }
+}
+
+void CameraService::sendSignal() {
+	ALOGV("sendSignal in");
+	bool lock = false;
+	lock = mFlashLock.tryLock();
+	if(lock) {
+		ALOGV("sendSignal:: lock already. signal to.");
+		mFlashCondition.signal();
+	}else {
+		mFlashLock.unlock();
+	}
 }
 
 // ----------------------------------------------------------------------------

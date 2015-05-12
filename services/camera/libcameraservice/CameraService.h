@@ -133,6 +133,7 @@ public:
     void                loadSound();
     void                playSound(sound_kind kind);
     void                releaseSound();
+	void 				sendSignal();
 
     /////////////////////////////////////////////////////////////////////
     // CameraDeviceFactory functionality
@@ -360,6 +361,8 @@ private:
     virtual sp<BasicClient>  getClientByRemote(const wp<IBinder>& cameraClient);
 
     Mutex               mServiceLock;
+	Mutex				mFlashLock;
+	Condition			mFlashCondition;
     // either a Client or CameraDeviceClient
     wp<BasicClient>     mClient[MAX_CAMERAS];  // protected by mServiceLock
     Mutex               mClientLock[MAX_CAMERAS]; // prevent Client destruction inside callbacks
