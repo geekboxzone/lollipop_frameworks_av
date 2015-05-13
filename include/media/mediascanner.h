@@ -102,6 +102,9 @@ private:
 
     MediaScanner(const MediaScanner &);
     MediaScanner &operator=(const MediaScanner &);
+#ifdef BOX
+    bool isBDDirectory(char* path);
+#endif
 };
 
 class MediaScannerClient
@@ -118,7 +121,10 @@ public:
             long long fileSize, bool isDirectory, bool noMedia) = 0;
     virtual status_t handleStringTag(const char* name, const char* value) = 0;
     virtual status_t setMimeType(const char* mimeType) = 0;
-
+#ifdef BOX
+    virtual status_t scanBDDirectory(const char* path, long long lastModified,
+            long long fileSize) = 0;
+#endif
 protected:
     // default encoding from MediaScanner::mLocale
     String8 mLocale;

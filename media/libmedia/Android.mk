@@ -75,6 +75,10 @@ LOCAL_WHOLE_STATIC_LIBRARIES := libmedia_helper
 
 LOCAL_MODULE:= libmedia
 
+ifeq ($(strip $(TARGET_BOARD_PLATFORM_PRODUCT)),box)
+	LOCAL_CFLAGS += -DBOX
+endif
+
 LOCAL_C_INCLUDES := \
     $(TOP)/frameworks/native/include/media/openmax \
     $(TOP)/frameworks/av/include/media/ \
