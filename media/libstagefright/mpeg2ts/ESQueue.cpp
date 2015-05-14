@@ -188,10 +188,6 @@ ElementaryStreamQueue::ElementaryStreamQueue(Mode mode, uint32_t flags)
         {
              break;
         }
-        case DTS:
-        {
-            break;
-        }
         case AC3:
         {
 
@@ -382,11 +378,6 @@ status_t ElementaryStreamQueue::appendData(
             case MPEG2:
             {
                 ALOGV("MPEG2 append the data \n");
-                 break;
-                }
-            case DTS:
-            {
-                ALOGV("DTS append the data \n");
                 break;
             }
 
@@ -513,10 +504,6 @@ MediaBuffer * ElementaryStreamQueue::dequeueAccessUnit() {
         case AC3:
 
             return dequeueAccessUnitAC3();
-        case DTS:
-
-            return dequeueAccessUnitDTS();
-
 		case MP3:
 
 			return dequeueAccessUnitMP3();
@@ -1470,32 +1457,7 @@ MediaBuffer *ElementaryStreamQueue::dequeueAccessUnitAC3() {
         ABitReader bits(mBuffer->data(), mBuffer->size());
         do {
             if(bits.numBitsLeft()){
-            code = (code << 8) | bits.getBits(8);
-            }else{
-                uint32_t code1 = 0xFFFFFFFF;
-                ABitReader bits1(mBuffer->data(), mBuffer->size());
-                do{
-                    if(bits1.numBitsLeft()){
-                        code1 = (code1 << 8) | bits1.getBits(8);
-                    }
-                    else{
-                        if(mTimestamps.size()> 2)
-                        {
-                            int64_t timeUs = *mTimestamps.begin();
-                            mTimestamps.erase(mTimestamps.begin());
-                        }
-                        mBuffer->setRange(0,0);
-						mTimestamps.clear();
-                        return NULL;
-                   }
-                }while (code1 != DTSSYNCWORD);
-                sp<MetaData> meta = new MetaData;
-                meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_AUDIO_DTS);
-                meta->setInt32(kKeySampleRate, kSamplingFreq);
-                meta->setInt32(kKeyChannelCount, channel_configuration);
-                mFormat = meta;
-                mSource = new AnotherPacketSource(meta);
-                return NULL;
+                code = (code << 8) | bits.getBits(8);
             }
         } while (code != AC3SYNCWORD);
         bits.skipBits(16);
@@ -1712,42 +1674,6 @@ repe:
     return NULL;
 }
 
- MediaBuffer * ElementaryStreamQueue::dequeueAccessUnitDTS() {
-    const uint8_t *data = mBuffer->data();
-    size_t size = mBuffer->size();
-    size_t auSize = size;
-    if(!size)
-    {
-        return NULL;
-    }
-    int32_t kSamplingFreq = 0;
-    int32_t channel_configuration = 0;
-    if (mFormat == NULL) {
-        sp<MetaData> meta = new MetaData;
-        meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_AUDIO_DTS);
-        meta->setInt32(kKeySampleRate, kSamplingFreq);
-        meta->setInt32(kKeyChannelCount, channel_configuration);
-        mFormat = meta;
-    }
-#ifdef ES_DEBUG
-#endif
-    MediaBuffer * accessUnit = new MediaBuffer(auSize);
-    memcpy(accessUnit->data(),(uint8_t *)mBuffer->data(),auSize);
-    int64_t timeUs = 0;
-    if(mTimestamps.size() > 0)
-    {
-        timeUs = *mTimestamps.begin();
-        lastTimeus = timeUs;
-        mTimestamps.erase(mTimestamps.begin());
-    }
-    else
-    {
-        timeUs = lastTimeus;
-    }
-    accessUnit->meta_data()->setInt64(kKeyTime, timeUs);
-    mBuffer->setRange(0,0);
-    return accessUnit;
-}
 #if 0
 MediaBuffer * ElementaryStreamQueue::dequeueAccessUnitPCM() {
     const uint8_t *data = mBuffer->data();
@@ -2097,165 +2023,7 @@ MediaBuffer * ElementaryStreamQueue::dequeueAccessUnitMP3() {
     return accessUnit;
             }
 
-#if 0
-MediaBuffer *ElementaryStreamQueue::dequeueAccessUnitAAC_ADTS() {
-     Vector<size_t> frameOffsets;
-     Vector<size_t> frameSizes;
-     size_t auSize = 0;
-     if(!mBuffer->size())
-     {
-        return NULL;
-     }
-    size_t offset = 0;
-    uint8_t *data = mBuffer->data();
-    bool hasframe = false;
-    while (offset + 7 <= mBuffer->size()) {
-        ABitReader bits(mBuffer->data() + offset, mBuffer->size() - offset);
- repet:
-        while((bits.showBits(16)&0xfff6) != 0xfff0u)
-        {
-            bits.skipBits(8);  // ID, layer
-            offset++;
-            if(bits.numBitsLeft() < 56)
-            {
-                if(frameOffsets.size())
-                {
-                    hasframe = true;
-            break;
-        }
-                else
-                {
-        mBuffer->setRange(0,0);
-        return NULL;
-    }
-				 if((offset + 7) > mBuffer->size())
-				 {
-                     mBuffer->setRange(0,0);
-                     return NULL;
-				 }
-            }
-         // adts_fixed_header
-        }
-        if(hasframe)
-        {
-            break;
-         }
-        bits.skipBits(15);  // ID, layer
-         bool protection_absent = bits.getBits(1) != 0;
 
-         if (mFormat == NULL) {
-             unsigned profile = bits.getBits(2);
-            if(profile == 3)
-            {
-                bits.skipBits(14);  // original_copy, home
-                offset += 4;
-                goto repet;
-            }
-             unsigned sampling_freq_index = bits.getBits(4);
-             bits.getBits(1);  // private_bit
-             unsigned channel_configuration = bits.getBits(3);
-            if(channel_configuration == 0)
-            {
-                bits.skipBits(6);  // original_copy, home
-                offset += 4;
-                goto repet;
-            }
-             bits.skipBits(2);  // original_copy, home
-
-             mFormat = MakeAACCodecSpecificData(
-                     profile, sampling_freq_index, channel_configuration);
-            if(mFormat != NULL)
-            {
-				if(player_type == 4/*live_tv*/)
-					mFormat->setInt32(kKeyIsLATM, true);
-
-                mSource = new AnotherPacketSource(mFormat);
-            }
-         } else {
-             // profile_ObjectType, sampling_frequency_index, private_bits,
-             // channel_configuration, original_copy, home
-             bits.skipBits(12);
-         }
-
-         // adts_variable_header
-
-         // copyright_identification_bit, copyright_identification_start
-         bits.skipBits(2);
-
-         unsigned aac_frame_length = bits.getBits(13);
-
-         bits.skipBits(11);  // adts_buffer_fullness
-
-         unsigned number_of_raw_data_blocks_in_frame = bits.getBits(2);
-
-         if (number_of_raw_data_blocks_in_frame != 0) {
-             // To be implemented.
-		ALOGD("number_of_raw_data_blocks_in_frame % d != 0 error offset %d +7 <= mBuffer->size() %d",
-			number_of_raw_data_blocks_in_frame,offset, mBuffer->size());
-		offset+=4;
-		continue;
-             TRESPASS();
-         }
-
-         if (offset + aac_frame_length > mBuffer->size()) {
-             break;
-         }
-
-         size_t headerSize = protection_absent ? 7 : 9;
-
-         frameOffsets.push(offset + headerSize);
-         frameSizes.push(aac_frame_length - headerSize);
-         auSize += aac_frame_length - headerSize;
-
-         offset += aac_frame_length;
-		 if(aac_frame_length <= 0)
-		 {
-		     mBuffer->setRange(0,0);
-             return NULL;
-		 }
-     }
-
-     if (offset == 0) {
-         return NULL;
-     }
-
-    MediaBuffer *accessUnit = new MediaBuffer(auSize);
-    size_t dstOffset = 0;
-    for (size_t i = 0; i < frameOffsets.size(); ++i) {
-        memcpy(accessUnit->data() + dstOffset,
-               mBuffer->data() + frameOffsets.itemAt(i),
-               frameSizes.itemAt(i));
-
-        dstOffset += frameSizes.itemAt(i);
-    }
-
-    memmove(mBuffer->data(), mBuffer->data() + offset,
-            mBuffer->size() - offset);
-    if(hasframe)
-        mBuffer->setRange(0,0);
-    else
-    mBuffer->setRange(0, mBuffer->size() - offset);
-
-    int64_t timeUs = 0;
-    if(mTimestamps.size() > 0)
-    {
-        timeUs = *mTimestamps.begin();
-        lastTimeus = timeUs;
-    mTimestamps.erase(mTimestamps.begin());
-		if(hasframe){
-            mTimestamps.clear();
-        }
-    }
-    else
-    {
-        timeUs = lastTimeus;
-    }
-
-
-        accessUnit->meta_data()->setInt64(kKeyTime, timeUs);
-     return accessUnit;
- }
-#else
 MediaBuffer *ElementaryStreamQueue::dequeueAccessUnitAAC_ADTS() {
     if (mBuffer->size() == 0) {
         return NULL;
@@ -2359,8 +2127,6 @@ MediaBuffer *ElementaryStreamQueue::dequeueAccessUnitAAC_ADTS() {
 
     return accessUnit;
 }
-
-#endif
 
 //TODO: avoid interpolating timestamps once codec supports arbitrary sized input buffers
 int64_t ElementaryStreamQueue::fetchTimestampAAC(size_t size) {

@@ -785,14 +785,6 @@ ATSParser::Stream::Stream(
 			is_video = true;
             break;
 
-		case STREAMTYPE_DTS:
-        case STREAMTYPE_DTS1:
-		case STREAMTYPE_DTS2:
-        case STREAMTYPE_DTS_HD:
-        case STREAMTYPE_DTS_HD_MASTER:
-            mQueue = new ElementaryStreamQueue(
-                    ElementaryStreamQueue::DTS);
-            break;
 
 	    case STREAMTYPE_AC3:
         case STREAMTYPE_TruHD:
@@ -974,11 +966,6 @@ bool ATSParser::Stream::isAudio() const {
 	//	case STREAMTYPE_PCM_AUDIO:
         case STREAMTYPE_AC3:
         case STREAMTYPE_TruHD:
-        case STREAMTYPE_DTS:
-        case STREAMTYPE_DTS1:
-        case STREAMTYPE_DTS2:
-        case STREAMTYPE_DTS_HD:
-        case STREAMTYPE_DTS_HD_MASTER:
             return true;
 
         default:

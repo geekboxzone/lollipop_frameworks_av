@@ -102,11 +102,6 @@ struct ATSParser : public RefBase {
 		STREAMTYPE_AC3                  = 0x81,
 		STREAMTYPE_TruHD                = 0x83,
         STREAMTYPE_PCM_AUDIO            = 0x83,
-		STREAMTYPE_DTS                  = 0x7b,
-		STREAMTYPE_DTS1                 = 0x82,
-		STREAMTYPE_DTS2                 = 0x8a,
-		STREAMTYPE_DTS_HD               = 0x85,
-		STREAMTYPE_DTS_HD_MASTER        = 0x86,
 		STREAMTYPE_VC1                  = 0xea,
 		STREAMTYPE_HEVC                 = 0x24,
 		STREAMTYPE_PCM                  = 0x80

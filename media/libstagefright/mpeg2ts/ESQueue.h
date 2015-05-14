@@ -78,7 +78,6 @@ struct ElementaryStreamQueue {
         AAC_LATM,
         AAC_ADTS,
         MP3,
-        DTS,
         MPEG4_VIDEO,
         PCM_AUDIO,
     };
@@ -132,7 +131,6 @@ private:
     MediaBuffer * dequeueAccessUnitMPEG2();
     MediaBuffer * dequeueAccessUnitAC3();
     MediaBuffer * dequeueAccessUnitVC1();
-    MediaBuffer * dequeueAccessUnitDTS();
     MediaBuffer * dequeueAccessUnitPCMAudio();
     MediaBuffer * dequeueAccessUnitAAC_ADTS();
     MediaBuffer * dequeueAccessUnitMP3();

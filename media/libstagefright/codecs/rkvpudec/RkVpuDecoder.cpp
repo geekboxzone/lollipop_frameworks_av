@@ -50,12 +50,10 @@ static const CodeMap kCodeMap[] = {
    { OMX_RK_VIDEO_CodingMPEG4, MEDIA_MIMETYPE_VIDEO_MPEG4},
    { OMX_RK_VIDEO_CodingVC1,   MEDIA_MIMETYPE_VIDEO_VC1 },
    { OMX_RK_VIDEO_CodingWMV,   MEDIA_MIMETYPE_VIDEO_WMV3},
-   { OMX_RK_VIDEO_CodingRV,    MEDIA_MIMETYPE_VIDEO_REALVIDEO},
    { OMX_RK_VIDEO_CodingAVC,   MEDIA_MIMETYPE_VIDEO_AVC},
    { OMX_RK_VIDEO_CodingMJPEG, MEDIA_MIMETYPE_VIDEO_MJPEG},
    { OMX_RK_VIDEO_CodingFLV1,  MEDIA_MIMETYPE_VIDEO_FLV},
    { OMX_RK_VIDEO_CodingVP8,   MEDIA_MIMETYPE_VIDEO_VP8},
-   { OMX_RK_VIDEO_CodingVP6,   MEDIA_MIMETYPE_VIDEO_VP6},
    { OMX_RK_VIDEO_CodingHEVC,   MEDIA_MIMETYPE_VIDEO_HEVC},
 };
 
@@ -285,54 +283,7 @@ status_t RkVpuDecoder::keyDataProcess(){
         }
 
         case OMX_RK_VIDEO_CodingMPEG4:
-        case OMX_RK_VIDEO_CodingDIVX3:
         {
-#if (SUPPORT_DIV3_DIVX_3IV2 == 0)
-            int32_t isDivX = 0;
-            if(meta->findInt32(kKeyIsDivX, &isDivX)) {
-                if (isDivX) {
-                    ALOGV("user set Divx not support");
-                    return ERROR_UNSUPPORTED;
-                }
-            }
-
-            int32_t isDiv3 = 0;
-            if (meta->findInt32(kKeyIsDiv3, &isDiv3)) {
-                if (isDiv3) {
-                    mCodecId = OMX_RK_VIDEO_CodingDIVX3;
-                    ALOGV("user set Div3 not support");
-                    return ERROR_UNSUPPORTED;
-                }
-            }
-
-            int32_t is3iv2 =0;
-            if (meta->findInt32(kKeyIs3iv2, &is3iv2)) {
-                if (is3iv2) {
-                    ALOGV("user set 3iv2 not support");
-                    return ERROR_UNSUPPORTED;
-                }
-            }
-#endif
-            int32_t tmp = 0;
-            if (meta->findInt32(kKeyIsDiv3, &tmp)) {
-                if (tmp) {
-                    mCodecId = OMX_RK_VIDEO_CodingDIVX3;
-                    char value[PROPERTY_VALUE_MAX];
-                    bool div3Support = true;
-                    if(property_get("media.cfg.div3.support", value, NULL)){
-                        if (strstr(value, "true")) {
-                            div3Support = true;
-                        } else {
-                            div3Support = false;
-                        }
-                    }
-                    if (div3Support == false) {
-                        ALOGI("Div3 not support");
-                        return ERROR_UNSUPPORTED;
-                    }
-                }
-
-            }
             mVpuCtx->enableparsing = 1;
             getExtraData(MPEG4_MODE);
             break;
@@ -362,13 +313,6 @@ status_t RkVpuDecoder::keyDataProcess(){
                     memcpy(mExtraData, data, mExtraDataSize);
                 }
             }
-            break;
-        }
-        case OMX_RK_VIDEO_CodingVP6:
-        {
-            int32_t codecinfo = 0;
-            CHECK(meta->findInt32(kKeyVp6CodecId, &codecinfo));
-            mVpuCtx->extra_cfg.vp6codeid = codecinfo;
             break;
         }
         case OMX_RK_VIDEO_CodingFLV1:

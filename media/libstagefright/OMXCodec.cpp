@@ -711,27 +711,7 @@ status_t OMXCodec::configureCodec(const sp<MetaData> &meta) {
         }else if (meta->findData(kKeyExtraData, &type, &data, &size)) {
             addCodecSpecificData(data, size);
         }
-        int32_t isDiv3 =0;
-        if (meta->findInt32(kKeyIsDiv3, &isDiv3) && isDiv3) {
-            OMX_INDEXTYPE index;
-            status_t err =
-                mOMX->getExtensionIndex(
-                        mNode,
-                        "OMX.rk.index.decoder.extension.div3",
-                        &index);
-            if (err != OK) {
-                CODEC_LOGE("no Extension Index('OMX.rk.index.decoder.extension.div3')");
-                return err;
-            } else {
-                OMX_BOOL isDiv3 = OMX_TRUE;
-                err = mOMX->setParameter(mNode, index, &isDiv3, sizeof(isDiv3));
-                if (err != OK) {
-                    CODEC_LOGE("setParameter('OMX.rk.index.decoder.extension.div3') "
-                               "returned error 0x%08x", err);
-                    return err;
-                }
-            }
-        }
+
     }
 
     int32_t bitRate = 0;
@@ -1459,18 +1439,12 @@ status_t OMXCodec::setVideoOutputFormat(
         compressionFormat = OMX_VIDEO_CodingVP9;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_MPEG2, mime)) {
         compressionFormat = OMX_VIDEO_CodingMPEG2;
-    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_REALVIDEO, mime)) {
-        compressionFormat = OMX_VIDEO_CodingRV;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_VC1, mime)) {
         compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingVC1;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_WMV3, mime)) {
         compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingWMV;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_FLV, mime)) {
         compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingFLV1;
-    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_REALVIDEO, mime)) {
-        compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingRV;
-    } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_VP6, mime)) {
-        compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingVP6;
     } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_MJPEG, mime)) {
         compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingMJPEG;
     } else {

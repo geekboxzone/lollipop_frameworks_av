@@ -76,10 +76,6 @@ enum {
     kKeyWmvTrackCnt       = 'wcnt',  // int32_t, track count of wmv source
     kKeyWma3FirstPos      = 'wfst',  // int32_t
     kKeyWma3AudioStreamId = 'wasd',  // int32_t
-    kKeyVp6CodecId        = 'v6cd',   // int32_t
-    kKeyIsDiv3            = 'div3',  // int32_t (bool)
-    kKeyIsDivX            = 'divx',  // int32_t (bool)
-    kKeyIs3iv2            = '3iv2',  // int32_t (bool)
     kKeyIsCodecConfig     = 'conf',  // int32_t (bool)
     kKeyBusAdds           = 'abus',  // uint32_t (pointer)
     kKeyTime              = 'time',  // int64_t (usecs)
