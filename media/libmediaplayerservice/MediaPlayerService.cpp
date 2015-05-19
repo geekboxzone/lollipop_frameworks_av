@@ -2081,7 +2081,13 @@ status_t MediaPlayerService::AudioCache::open(
     mMsecsPerFrame = 1.e3 / (float) sampleRate;
     mFrameSize =  audio_is_linear_pcm(mFormat)
             ? mChannelCount * audio_bytes_per_sample(mFormat) : 1;
-    mFrameCount = mHeap->getSize() / mFrameSize;
+    ALOGV("==========mFrameCount:%d,mHeap->getSize():%d,mHeap->getSize() / mFrameSize:%d====",
+        mFrameCount,mHeap->getSize(),mHeap->getSize() / mFrameSize);
+    if (cb == NULL) {
+        //use default buffersize for awesomeplayer and Use the size of the heap if AudioCache used by NuPlayer.
+        mFrameCount = mHeap->getSize() / mFrameSize;
+
+    }
 
     if (cb != NULL) {
         mCallbackThread = new CallbackThread(this, cb, cookie);
