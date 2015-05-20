@@ -37,10 +37,10 @@ FileSource::FileSource(const char *filename)
       mDrmBufSize(0),
       mDrmBuf(NULL){
 
-	/*Begin: DTS2011120903153 added by g00166974 20110603 . */
-	/*Begin: DTS2011120903153 deleted by h00184579 20120325 for FD*/
+	/*Begin: 2011120903153 added by g00166974 20110603 . */
+	/*Begin: 2011120903153 deleted by h00184579 20120325 for FD*/
     //mFileName = filename;
-    /*End: DTS2011120903153 deleted by h00184579 20120325 for FD*/
+    /*End: 2011120903153 deleted by h00184579 20120325 for FD*/
 	mIsDrmPreview = false;
     mFd = open(filename, O_LARGEFILE | O_RDONLY);
 
@@ -130,12 +130,12 @@ ssize_t FileSource::readAt(off64_t offset, void *data, size_t size) {
 		ssize_t ret  = ::read(mFd, data, size);
 
 		if(ret != size)
-		{		
+		{
 		    close(mFd);
 		    mFd = -1;
 			//ret = -1;
         }
-		
+
 		return   ret;
     }
 }

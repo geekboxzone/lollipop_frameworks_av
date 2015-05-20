@@ -36,12 +36,9 @@ struct MetaData;
 #define XMEDIA_BITSTREAM_START_CODE         (0x42564b52) /* RKVB, rockchip video bitstream */
 #define AC3SYNCWORD 	0x0B77
 #define MPASYNCWORD		0xFFE0
-#define DTSSYNCWORD 	0x7FFE8001
-#define SYNC_LATM   0x2b7       // 11 bits
 #define MAX_SIZE    16*1024
 #define ADTS_HEADER_LEN    0x7
 #define AAC_TIMESTAMP_LEN   0x4//0x0
-#define LATM_HEADER_LEN  0x3
 #define MPGA_HEADER_LEN 0x4
 #define AAC_FRAME_CACHED_LEN	64*1024
 #define min(a,b) ((a)<(b) ? (a) : (b))

@@ -36,7 +36,6 @@
 #define MP3_CONTAINER_CONFIDENCE            (0.4f)
 #define AMR_CONTAINER_CONFIDENCE            (0.5f)
 #define MPG_CONTAINER_CONFIDENCE            (0.5f)
-#define REALVIDEO_CONTAINER_CONFIDENCE      (0.6f)
 #define FLV_CONTAINER_CONFIDENCE            (0.6f)
 #define AVI_CONTAINER_CONFIDENCE            (0.6f)
 #define MPEG4_CONTAINER_CONFIDENCE          (0.7f)

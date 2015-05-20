@@ -37,8 +37,6 @@
 
 namespace android {
 
-#define SUPPORT_DIV3_DIVX_3IV2 1
-
 struct CodeMap {
    OMX_RK_VIDEO_CODINGTYPE codec_id;
    const char *mime;

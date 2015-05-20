@@ -63,7 +63,6 @@ const char *MEDIA_MIMETYPE_CONTAINER_MATROSKA = "video/x-matroska";
 const char *MEDIA_MIMETYPE_CONTAINER_WMV = "video/wmv";
 const char *MEDIA_MIMETYPE_CONTAINER_MPG = "video/mpg";
 const char *MEDIA_MIMETYPE_CONTAINER_MPEG2TS = "video/mp2ts";
-const char *MEDIA_MIMETYPE_CONTAINER_REALVIDEO =  "video/rmvb";
 const char *MEDIA_MIMETYPE_CONTAINER_ADIF =  "X-AAC-ADIF" ;//.aac file format
 const char *MEDIA_MIMETYPE_CONTAINER_ADTS =  "X-AAC-ADTS" ;//.aac file format
 

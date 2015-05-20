@@ -178,9 +178,9 @@ sp<MediaExtractor> MediaExtractor::Create(
 
     if (ret != NULL && isDrm) {
 			ret->setDrmFlag(true);
-           /* <DTS2012050301388 wanghao 20120503 begin */
+           /* <2012050301388 wanghao 20120503 begin */
            ret->getMetaData()->setInt32(kKeyIsDRM, 1);
-           /* DTS2012050301388 wanghao 20120503 end> */
+           /* 2012050301388 wanghao 20120503 end> */
     } else if (ret != NULL) {
         ret->setDrmFlag(false);
     }
