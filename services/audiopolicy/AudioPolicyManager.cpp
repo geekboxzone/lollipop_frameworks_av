@@ -1096,7 +1096,9 @@ audio_io_handle_t AudioPolicyManager::getOutputForDevice(
                         (channelMask == outputDesc->mChannelMask)) {
                     outputDesc->mDirectOpenCount++;
                     ALOGV("getOutput() reusing direct output %d", mOutputs.keyAt(i));
+                    #ifndef BOX_STRATEGY
                     return mOutputs.keyAt(i);
+                    #endif
                 }
             }
         }
