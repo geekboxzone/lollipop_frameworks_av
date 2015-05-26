@@ -122,7 +122,7 @@ public:
 
     /////////////////////////////////////////////////////////////////////
     // Client functionality
-    virtual void        removeClientByRemote(const wp<IBinder>& remoteBinder);
+    virtual void        removeClientByRemote(const wp<IBinder>& remoteBinder, const String16 clientPackageName);
 
     enum sound_kind {
         SOUND_SHUTTER = 0,
