@@ -62,12 +62,12 @@ FileSource::FileSource(int fd, int64_t offset, int64_t length)
       mDrmBuf(NULL){
     CHECK(offset >= 0);
     CHECK(length >= 0);
-    /*Begin: DTS2011120903153 added by g00166974 20110603 . */
-    /*Begin: DTS2011120903153 deleted by h00184579 20120325 for FD*/
+    /*Begin: 2011120903153 added by g00166974 20110603 . */
+    /*Begin: 2011120903153 deleted by h00184579 20120325 for FD*/
     //mFileName = NULL;
-    /*End: DTS2011120903153 deleted by h00184579 20120325 for FD*/
+    /*End: 2011120903153 deleted by h00184579 20120325 for FD*/
     mIsDrmPreview = false;
-    /*End: DTS2011120903153 added by g00166974 20110603 . */
+    /*End: 2011120903153 added by g00166974 20110603 . */
 }
 
 FileSource::~FileSource() {
