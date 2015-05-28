@@ -3092,9 +3092,7 @@ AudioPolicyManager::AudioPolicyManager(AudioPolicyClientInterface *clientInterfa
     mAudioPortGeneration(1),
     mBeaconMuteRefCount(0),
     mBeaconPlayingRefCount(0),
-    mBeaconMuted(false),
-    mHDMIOutputDevice(NULL),
-    mSPDIFOutputDevice(NULL)
+    mBeaconMuted(false)
 {
     mUidCached = getuid();
     mpClientInterface = clientInterface;
