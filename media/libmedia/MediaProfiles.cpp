@@ -727,11 +727,13 @@ MediaProfiles::getInstance()
 
                     fp = fopen(defaultXmlFile, "r");
                     if(ver > 0x000333){
+						/*
                         while((delay_s<5) && (fp==NULL)) {
                             sleep(1);
                             delay_s++;
                             fp = fopen(defaultXmlFile, "r");
                         }
+						*/
                         if (fp == NULL) {
                             ALOGE("WARNING!!!! %s(%d): cameraHal version(%s) after(0.3.0x33),but don't have file(%s)",
                                      __FUNCTION__,__LINE__,camerahal_value,defaultXmlFile);
