@@ -856,8 +856,8 @@ sp<AudioPolicyManager::IOProfile> AudioPolicyManager::getProfileForDirectOutput(
 #ifdef BOX_STRATEGY
 	if(flags != AUDIO_OUTPUT_FLAG_DIRECT)
 		return 0;
-	if ((flags & AUDIO_OUTPUT_FLAG_DIRECT) && (device & AUDIO_DEVICE_OUT_SPEAKER))
-		device &= ~AUDIO_DEVICE_OUT_SPEAKER;
+	if ((flags == AUDIO_OUTPUT_FLAG_DIRECT) && (device & AUDIO_DEVICE_OUT_SPDIF))
+		device = AUDIO_DEVICE_OUT_SPDIF;
 #endif
 	for (size_t i = 0; i < mHwModules.size(); i++) {
         if (mHwModules[i]->mHandle == 0) {
@@ -3092,7 +3092,9 @@ AudioPolicyManager::AudioPolicyManager(AudioPolicyClientInterface *clientInterfa
     mAudioPortGeneration(1),
     mBeaconMuteRefCount(0),
     mBeaconPlayingRefCount(0),
-    mBeaconMuted(false)
+    mBeaconMuted(false),
+    mHDMIOutputDevice(NULL),
+    mSPDIFOutputDevice(NULL)
 {
     mUidCached = getuid();
     mpClientInterface = clientInterface;
@@ -3128,6 +3130,9 @@ AudioPolicyManager::AudioPolicyManager(AudioPolicyClientInterface *clientInterfa
 	property_set(MEDIA_CFG_AUDIO_MUL, "false");
 
 	ALOGD("cardStrategy = %d , hasSpdif() = %d", cardStrategy,hasSpdif());
+	if(hasSpdif())
+            mAvailableOutputDevices.add(mSPDIFOutputDevice);
+        mAvailableOutputDevices.add(mHDMIOutputDevice);
 	switch (cardStrategy) {
 	case CARDSDEFAULT:
 		if(hasSpdif())
