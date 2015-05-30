@@ -90,6 +90,7 @@ static sp<MediaMetadataRetrieverBase> createRetriever(player_type playerType)
     switch (playerType) {
         case APE_PLAYER:
         case STAGEFRIGHT_PLAYER:
+        case FF_PLAYER:
         case NU_PLAYER:
         {
             p = new StagefrightMetadataRetriever;
@@ -100,7 +101,7 @@ static sp<MediaMetadataRetrieverBase> createRetriever(player_type playerType)
             p = new MidiMetadataRetriever();
             break;
 
-#ifdef USE_FFPLAYER
+#if 0
         case FF_PLAYER:
         {
             p =  new RK_MetadataRetriever;
