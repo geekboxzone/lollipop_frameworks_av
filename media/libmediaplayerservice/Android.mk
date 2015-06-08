@@ -8,7 +8,7 @@ include $(CLEAR_VARS)
 
 ifneq ($(filter rk%, $(TARGET_BOARD_PLATFORM)), )
 LOCAL_CFLAGS := -DAVS50
-BUILD_FF_PALYER := true
+BUILD_FF_PALYER := false
 else
 BUILD_FF_PALYER := false
 endif
