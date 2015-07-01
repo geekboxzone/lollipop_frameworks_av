@@ -25,6 +25,7 @@
 #include <binder/ProcessState.h>
 #include <binder/IServiceManager.h>
 #include <cutils/properties.h>
+#include <cutils/sched_policy.h>
 #include <utils/Log.h>
 #include "RegisterExtensions.h"
 
@@ -131,6 +132,15 @@ int main(int argc __unused, char** argv)
         AudioPolicyService::instantiate();
         SoundTriggerHwService::instantiate();
         registerExtensions();
+
+        /*adjust sched_policy for mediaserver*/
+        int tid = gettid();
+        if(0 == set_sched_policy(tid, SP_FOREGROUND)){
+           ALOGE("MediaServer is SP_FOREGROUND, tid=%d", tid);
+        }else{
+           ALOGE("MediaServer isn't SP_FOREGROUND, please check.............., tid=%d", tid);
+        }
+
         ProcessState::self()->startThreadPool();
         IPCThreadState::self()->joinThreadPool();
     }
