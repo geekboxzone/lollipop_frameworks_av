@@ -8,9 +8,9 @@ include $(CLEAR_VARS)
 
 ifneq ($(filter rk%, $(TARGET_BOARD_PLATFORM)), )
 LOCAL_CFLAGS := -DAVS50
-BUILD_FF_PALYER := false
+BUILD_FF_PLAYER := false
 else
-BUILD_FF_PALYER := false
+BUILD_FF_PLAYER := false
 endif
 
 LOCAL_SRC_FILES :=               \
@@ -63,7 +63,7 @@ LOCAL_C_INCLUDES :=                                                 \
     $(TOP)/frameworks/native/include/media/openmax                  \
     $(TOP)/external/tremolo/Tremolo                                 
     
-ifeq ($(BUILD_FF_PALYER),true)
+ifeq ($(strip $(BUILD_FF_PLAYER)),true)
 LOCAL_SRC_FILES += \
     FFPlayer.cpp\
     ApePlayer.cpp
