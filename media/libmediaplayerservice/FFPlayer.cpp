@@ -94,7 +94,7 @@ status_t FFPlayer::start() {
 
 status_t FFPlayer::stop() {
     ALOGV("stop");
-    return pause();  // what's the difference?
+    return mPlayer->stop();
 }
 
 status_t FFPlayer::pause() {
@@ -157,7 +157,7 @@ status_t FFPlayer::reset() {
 
 status_t FFPlayer::setLooping(int loop) {
     ALOGV("setLooping");
-    return OK;// mPlayer->setLooping(loop);
+    return mPlayer->setLooping(loop);
 }
 
 player_type FFPlayer::playerType() {
