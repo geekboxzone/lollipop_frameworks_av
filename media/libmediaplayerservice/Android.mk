@@ -66,15 +66,12 @@ LOCAL_C_INCLUDES :=                                                 \
 ifeq ($(strip $(BUILD_FF_PLAYER)),true)
 LOCAL_SRC_FILES += \
     FFPlayer.cpp\
-    ApePlayer.cpp
 
 LOCAL_CFLAGS +=	\
     -DUSE_FFPLAYER\
-    -DUSE_APEPLAYER
 
 LOCAL_SHARED_LIBRARIES += \
     librkffplayer\
-    libapedec
 
 LOCAL_C_INCLUDES += \
 	$(TOP)/external/ffmpeg                                          \
