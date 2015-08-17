@@ -933,7 +933,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                     }
                 }
 
-                if (mLastTrack == NULL)
+                if (!mLastTrack)
                     return ERROR_MALFORMED;
 
                 mLastTrack->sampleTable = new SampleTable(mDataSource);
@@ -1092,7 +1092,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             original_fourcc = ntohl(original_fourcc);
             ALOGV("read original format: %d", original_fourcc);
 
-            if (mLastTrack == NULL)
+            if (!mLastTrack)
                 return ERROR_MALFORMED;
 
             mLastTrack->meta->setCString(kKeyMIMEType, FourCC2MIME(original_fourcc));
@@ -1149,7 +1149,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_IO;
             }
 
-            if (mLastTrack == NULL)
+            if (!mLastTrack)
                 return ERROR_MALFORMED;
 
             mLastTrack->meta->setInt32(kKeyCryptoMode, defaultAlgorithmId);
@@ -1329,7 +1329,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 // For encrypted files, there may also be more than one entry.
                 const char *mime;
 
-                if (mLastTrack == NULL)
+                if (!mLastTrack)
                     return ERROR_MALFORMED;
 
                 CHECK(mLastTrack->meta->findCString(kKeyMIMEType, &mime));
@@ -1372,6 +1372,8 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
             uint16_t sample_size = U16_AT(&buffer[18]);
             uint32_t sample_rate = U32_AT(&buffer[24]) >> 16;
+            if(!mLastTrack)
+                return ERROR_MALFORMED;
             mLastTrack->meta->setInt32(kKeyChannelCount,num_channels);
             mLastTrack->meta->setInt32(kKeySampleRate, sample_rate);
             mLastTrack->meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_AUDIO_MPEG);
@@ -1395,6 +1397,9 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
             uint16_t sample_size = U16_AT(&buffer[18]);
             uint32_t sample_rate = U32_AT(&buffer[24]) >> 16;
+            
+            if(!mLastTrack)
+                return ERROR_MALFORMED;
             mLastTrack->meta->setInt32(kKeyChannelCount,num_channels);
             mLastTrack->meta->setInt32(kKeySampleRate, sample_rate);
             mLastTrack->meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_AUDIO_AC3);
@@ -1403,6 +1408,9 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
         }
 #ifdef QT_PCM
         case FOURCC('t', 'w', 'o', 's'):
+            
+            if(!mLastTrack)
+                return ERROR_MALFORMED;
             mLastTrack->meta->setInt32(kKeyBigLittle, 1);
         case FOURCC('s', 'o', 'w', 't'):
         {
@@ -1426,6 +1434,9 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             ExStruct->Channels = num_channels;
             ExStruct->SamplesPerSec = sample_rate;
             ExStruct->BitsPerSample = sample_size;
+            
+            if(!mLastTrack)
+                return ERROR_MALFORMED;
             mLastTrack->sampleTable->setSampleSize((sample_size>>3)*num_channels);
             audioExtraSize = QT_MAX_AUDIO_WAVFMT_SIZE;
             mLastTrack->meta->setInt32(kKeyChannelCount,num_channels);
@@ -1462,7 +1473,10 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             ExStruct->Channels = num_channels;
             ExStruct->SamplesPerSec = sample_rate;
             ExStruct->BitsPerSample = sample_size;
-            mLastTrack->sampleTable->setSampleSize((sample_size>>3)*num_channels);
+            
+            if(!mLastTrack)
+                return ERROR_MALFORMED;
+mLastTrack->sampleTable->setSampleSize((sample_size>>3)*num_channels);
             audioExtraSize = QT_MAX_AUDIO_WAVFMT_SIZE;
             mLastTrack->meta->setInt32(kKeyChannelCount,num_channels);
             mLastTrack->meta->setInt32(kKeySampleRate, sample_rate);
@@ -1492,9 +1506,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             uint16_t sample_size = U16_AT(&buffer[18]);
             uint32_t sample_rate = U32_AT(&buffer[24]) >> 16;
 
-            if (mLastTrack == NULL)
-                return ERROR_MALFORMED;
-
+            
             if (chunk_type != FOURCC('e', 'n', 'c', 'a')) {
                 // if the chunk type is enca, we'll get the type from the sinf/frma box later
                 mLastTrack->meta->setCString(kKeyMIMEType, FourCC2MIME(chunk_type));
@@ -1502,6 +1514,9 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             }
             ALOGV("*** coding='%s' %d channels, size %d, rate %d\n",
                    chunk, num_channels, sample_size, sample_rate);
+            
+            if(!mLastTrack)
+                return ERROR_MALFORMED;
             mLastTrack->meta->setInt32(kKeyChannelCount, num_channels);
             mLastTrack->meta->setInt32(kKeySampleRate, sample_rate);
 
@@ -1613,7 +1628,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
             // printf("*** coding='%s' width=%d height=%d\n",
             //        chunk, width, height);
 
-            if (mLastTrack == NULL)
+            if (!mLastTrack)
                 return ERROR_MALFORMED;
 
             if (chunk_type != FOURCC('e', 'n', 'c', 'v')) {
@@ -1645,7 +1660,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
         case FOURCC('s', 't', 'c', 'o'):
         case FOURCC('c', 'o', '6', '4'):
         {
-            if ((mLastTrack == NULL) || (mLastTrack->sampleTable == NULL))
+            if ((mLastTrack == NULL) || !mLastTrack->sampleTable.get())
                 return ERROR_MALFORMED;
 
             status_t err =
@@ -1662,7 +1677,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
         case FOURCC('s', 't', 's', 'c'):
         {
-            if ((mLastTrack == NULL) || (mLastTrack->sampleTable == NULL))
+            if ((mLastTrack == NULL) || !mLastTrack->sampleTable.get())
                 return ERROR_MALFORMED;
 
             status_t err =
@@ -1680,7 +1695,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
         case FOURCC('s', 't', 's', 'z'):
         case FOURCC('s', 't', 'z', '2'):
         {
-            if ((mLastTrack == NULL) || (mLastTrack->sampleTable == NULL))
+            if ((mLastTrack == NULL) || !mLastTrack->sampleTable.get())
                 return ERROR_MALFORMED;
 
             status_t err =
@@ -1752,7 +1767,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
         case FOURCC('s', 't', 't', 's'):
         {
 
-            if ((mLastTrack == NULL) || (mLastTrack->sampleTable == NULL))
+            if ((mLastTrack == NULL) || !mLastTrack->sampleTable.get())
                 return ERROR_MALFORMED;
 
             status_t err =
@@ -1769,7 +1784,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
         case FOURCC('c', 't', 't', 's'):
         {
-            if ((mLastTrack == NULL) || (mLastTrack->sampleTable == NULL))
+            if ((mLastTrack == NULL) || !mLastTrack->sampleTable.get())
                 return ERROR_MALFORMED;
             status_t err =
                 mLastTrack->sampleTable->setComposTimeOffParams(
@@ -1785,7 +1800,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
         case FOURCC('s', 't', 's', 's'):
         {
-            if ((mLastTrack == NULL) || (mLastTrack->sampleTable == NULL))
+            if ((mLastTrack == NULL) || !mLastTrack->sampleTable.get())
                 return ERROR_MALFORMED;
 
             status_t err =
@@ -1857,7 +1872,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_MALFORMED;
             }
 
-            if (mLastTrack == NULL)
+            if (!mLastTrack)
                 return ERROR_MALFORMED;
 
             mLastTrack->meta->setData(
@@ -1891,7 +1906,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_IO;
             }
 
-            if (mLastTrack == NULL)
+            if (!mLastTrack)
                 return ERROR_MALFORMED;
 
             mLastTrack->meta->setData(
@@ -1909,7 +1924,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_IO;
             }
 
-            if (mLastTrack == NULL)
+            if (!mLastTrack)
                 return ERROR_MALFORMED;
 
             mLastTrack->meta->setData(
@@ -1944,7 +1959,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_IO;
             }
 
-            if (mLastTrack == NULL)
+            if (!mLastTrack)
                 return ERROR_MALFORMED;
 
             mLastTrack->meta->setData(kKeyD263, kTypeD263, buffer, chunk_data_size);
@@ -2044,7 +2059,10 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 }
                 duration = d32;
             }
-            if (duration != 0 && mHeaderTimescale != 0) {
+
+            if (!mLastTrack )
+                return ERROR_MALFORMED;
+            if (duration != 0 && mLastTrack->timescale != 0) {
                 mFileMetaData->setInt64(kKeyDuration, duration * 1000000 / mHeaderTimescale);
             }
 
@@ -2094,7 +2112,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_MALFORMED;
             }
 
-            if (duration != 0 && mHeaderTimescale != 0) {
+            if (duration != 0 && mLastTrack->timescale != 0) {
                 mFileMetaData->setInt64(kKeyDuration, duration * 1000000 / mHeaderTimescale);
             }
 
@@ -2124,15 +2142,16 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 return ERROR_IO;
             }
 
-            if (mLastTrack == NULL)
-                return ERROR_MALFORMED;
 
             uint32_t type = ntohl(buffer);
             // For the 3GPP file format, the handler-type within the 'hdlr' box
             // shall be 'text'. We also want to support 'sbtl' handler type
             // for a practical reason as various MPEG4 containers use it.
             if (type == FOURCC('t', 'e', 'x', 't') || type == FOURCC('s', 'b', 't', 'l')) {
-                mLastTrack->meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_TEXT_3GPP);
+        
+                 if (!mLastTrack )
+                     return ERROR_MALFORMED;
+                 mLastTrack->meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_TEXT_3GPP);
             }
 			*offset += chunk_size;
             break;
@@ -2160,7 +2179,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
         case FOURCC('t', 'x', '3', 'g'):
         {
-            if (mLastTrack == NULL)
+            if (!mLastTrack)
                 return ERROR_MALFORMED;
 
             uint32_t type;
@@ -2171,7 +2190,7 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
                 size = 0;
             }
 
-            if (SIZE_MAX - chunk_size <= size) {
+            if ((chunk_size > SIZE_MAX) || (SIZE_MAX - chunk_size <= size)) {
                 return ERROR_MALFORMED;
             }
 
@@ -2207,9 +2226,9 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
         {
             if (mFileMetaData != NULL) {
                 ALOGV("chunk_data_size = %lld and data_offset = %lld",
-                        (long long)chunk_data_size, (long long)data_offset);
+                        chunk_data_size, data_offset);
 
-                if (chunk_data_size >= SIZE_MAX - 1) {
+                if ((chunk_data_size >= SIZE_MAX - 1)) {
                     return ERROR_MALFORMED;
                 }
                 sp<ABuffer> buffer = new ABuffer(chunk_data_size + 1);
@@ -2314,7 +2333,7 @@ status_t MPEG4Extractor::parseSegmentIndex(off64_t offset, size_t size) {
         return ERROR_MALFORMED;
     }
     ALOGV("sidx refid/timescale: %d/%d", referenceId, timeScale);
-    if (timeScale == 0)
+    if (timeScale < 1)
         return ERROR_MALFORMED;
 
     uint64_t earliestPresentationTime;
@@ -2399,7 +2418,7 @@ status_t MPEG4Extractor::parseSegmentIndex(off64_t offset, size_t size) {
 
     uint64_t sidxDuration = total_duration * 1000000 / timeScale;
 
-    if (mLastTrack == NULL)
+    if (!mLastTrack )
         return ERROR_MALFORMED;
 
     int64_t metaDuration;
@@ -2452,7 +2471,7 @@ status_t MPEG4Extractor::parseTrackHeader(
         return ERROR_UNSUPPORTED;
     }
 
-    if (mLastTrack == NULL)
+    if (!mLastTrack)
         return ERROR_MALFORMED;
 
     mLastTrack->meta->setInt32(kKeyTrackID, id);
@@ -2636,7 +2655,7 @@ status_t MPEG4Extractor::parseITunesMetaData(off64_t offset, size_t size) {
                     int32_t delay, padding;
                     if (sscanf(mLastCommentData,
                                " %*x %x %x %*x", &delay, &padding) == 2) {
-                        if (mLastTrack == NULL)
+                        if (!mLastTrack)
                             return ERROR_MALFORMED;
 
                         mLastTrack->meta->setInt32(kKeyEncoderDelay, delay);
@@ -3008,12 +3027,14 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
 
     if (objectTypeIndication == 0xe1) {
         // This isn't MPEG4 audio at all, it's QCELP 14k...
-        if (mLastTrack == NULL)
+        if (!mLastTrack)
             return ERROR_MALFORMED;
 
         mLastTrack->meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_AUDIO_QCELP);
         return OK;
     } else if(objectTypeIndication == 0x6B ||objectTypeIndication == 0x69) {
+        if (!mLastTrack)
+            return ERROR_MALFORMED;
         mLastTrack->meta->setCString(kKeyMIMEType, MEDIA_MIMETYPE_AUDIO_MPEG);
     }
 
@@ -3053,7 +3074,7 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
         objectType = 32 + br.getBits(6);
     }
 
-    if (mLastTrack == NULL)
+    if (!mLastTrack )
         return ERROR_MALFORMED;
 
     //keep AOT type
@@ -3226,8 +3247,6 @@ status_t MPEG4Extractor::updateAudioTrackInfoFromESDS_MPEG4Audio(
         return ERROR_UNSUPPORTED;
     }
 
-    if (mLastTrack == NULL)
-        return ERROR_MALFORMED;
 
     int32_t prevSampleRate;
     CHECK(mLastTrack->meta->findInt32(kKeySampleRate, &prevSampleRate));
