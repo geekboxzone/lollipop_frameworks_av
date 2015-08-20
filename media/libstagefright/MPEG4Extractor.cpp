@@ -1507,6 +1507,8 @@ mLastTrack->sampleTable->setSampleSize((sample_size>>3)*num_channels);
             uint32_t sample_rate = U32_AT(&buffer[24]) >> 16;
 
             
+            if(!mLastTrack)
+                return ERROR_MALFORMED;
             if (chunk_type != FOURCC('e', 'n', 'c', 'a')) {
                 // if the chunk type is enca, we'll get the type from the sinf/frma box later
                 mLastTrack->meta->setCString(kKeyMIMEType, FourCC2MIME(chunk_type));
@@ -1515,8 +1517,6 @@ mLastTrack->sampleTable->setSampleSize((sample_size>>3)*num_channels);
             ALOGV("*** coding='%s' %d channels, size %d, rate %d\n",
                    chunk, num_channels, sample_size, sample_rate);
             
-            if(!mLastTrack)
-                return ERROR_MALFORMED;
             mLastTrack->meta->setInt32(kKeyChannelCount, num_channels);
             mLastTrack->meta->setInt32(kKeySampleRate, sample_rate);
 
@@ -2059,10 +2059,7 @@ mLastTrack->sampleTable->setSampleSize((sample_size>>3)*num_channels);
                 }
                 duration = d32;
             }
-
-            if (!mLastTrack )
-                return ERROR_MALFORMED;
-            if (duration != 0 && mLastTrack->timescale != 0) {
+            if (duration != 0 && mHeaderTimescale != 0) {
                 mFileMetaData->setInt64(kKeyDuration, duration * 1000000 / mHeaderTimescale);
             }
 
@@ -2112,7 +2109,7 @@ mLastTrack->sampleTable->setSampleSize((sample_size>>3)*num_channels);
                 return ERROR_MALFORMED;
             }
 
-            if (duration != 0 && mLastTrack->timescale != 0) {
+            if (duration != 0 && mHeaderTimescale != 0) {
                 mFileMetaData->setInt64(kKeyDuration, duration * 1000000 / mHeaderTimescale);
             }
 
