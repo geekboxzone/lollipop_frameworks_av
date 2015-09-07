@@ -89,8 +89,6 @@ status_t MediaPlayerFactory::registerFactory_l(IFactory* factory,
 
 static player_type getDefaultPlayerType() {
     char value[PROPERTY_VALUE_MAX];
-    char prop_value[100];
-    property_get("sys.cts.capture", prop_value, "0");
     if (property_get("media.stagefright.use-awesome", value, NULL)
             && (!strcmp("1", value) || !strcasecmp("true", value))) {
         return STAGEFRIGHT_PLAYER;
@@ -102,19 +100,11 @@ static player_type getDefaultPlayerType() {
         return STAGEFRIGHT_PLAYER;
     }
 
-    if (!strcmp(prop_value,"test_S0P0") || !strcmp(prop_value,"test_S1P000005")
-        || !strcmp(prop_value,"test_S2P00001") || !strcmp(prop_value,"test_S3P00001") 
-        || !strcmp(prop_value,"test_S4P00001") || !strcmp(prop_value,"test_S5P00001")
-        || !strcmp(prop_value,"test_S6P00002")){
-        return NU_PLAYER;
-    }else{
 #ifndef  USE_FFPLAYER
-        return STAGEFRIGHT_PLAYER;
+    return STAGEFRIGHT_PLAYER;
 #else
-        return FF_PLAYER;
+    return FF_PLAYER;
 #endif
-
-    }
 }
 
 status_t MediaPlayerFactory::registerFactory(IFactory* factory,
@@ -180,6 +170,9 @@ void MediaPlayerFactory::unregisterFactory(player_type type) {
 
 player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
                                               const char* url) {
+    if(!strncasecmp("http://localhost:", url, 17)) {
+        return NU_PLAYER;
+    }
     if (!strncasecmp("iptv://", url, 7)) {
         return STAGEFRIGHT_PLAYER;
     }
@@ -193,7 +186,7 @@ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
     }
 
     if(strstr(url,".ogg")){
-        return STAGEFRIGHT_PLAYER;  
+        return STAGEFRIGHT_PLAYER;
     }
     
     if(strstr(url,".wvm")){
@@ -210,10 +203,10 @@ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
     String8 filePath;
     getFileName(fd,&filePath);
 
-    if(strstr(filePath.string(),".apk"))
+    /*if(strstr(filePath.string(),".apk"))
     {
         return NU_PLAYER;
-    }
+    }*/
 
     if(strstr(filePath.string(),".tv"))
     {
