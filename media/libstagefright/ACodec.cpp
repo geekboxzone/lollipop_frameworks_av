@@ -4915,18 +4915,23 @@ bool ACodec::UninitializedState::onAllocateComponent(const sp<AMessage> &msg) {
     uint32_t quirks = 0;
     int32_t encoder = false;
     if (msg->findString("componentName", &componentName)) {
+
         ssize_t index = matchingCodecs.add();
         OMXCodec::CodecNameAndQuirks *entry = &matchingCodecs.editItemAt(index);
         entry->mName = String8(componentName.c_str());
-
         if (!OMXCodec::findCodecQuirks(
                     componentName.c_str(), &entry->mQuirks)) {
             entry->mQuirks = 0;
         }
     } else {
-        CHECK(msg->findString("mime", &mime));
 
+        CHECK(msg->findString("mime", &mime));
         int32_t flags = OMXCodec::kHardwareCodecsOnly;
+#ifdef USE_SOFT_HEVC
+        if(!strncasecmp(mime.c_str(), "video/hevc", 10)) {
+            flags = OMXCodec::kSoftwareCodecsOnly;
+        }
+#endif
         if((!strncasecmp(mime.c_str(), "audio/", 6)) ||
             (!strncasecmp(mime.c_str(), "video/x-vnd.on2.vp9", 19)))
         {

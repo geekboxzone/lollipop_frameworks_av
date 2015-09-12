@@ -11,6 +11,10 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 include frameworks/av/media/libstagefright/codecs/common/Config.mk
 
+ifeq ($(TARGET_BOARD_PLATFORM), rk312x)
+	LOCAL_CFLAGS += -DUSE_SOFT_HEVC
+endif
+
 LOCAL_SRC_FILES:=                         \
         ACodec.cpp                        \
         AACExtractor.cpp                  \
