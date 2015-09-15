@@ -805,8 +805,8 @@ MediaBuffer *ElementaryStreamQueue::dequeueAccessUnitHEVC() {
            }
            if(parserpacket.size > 0 && seekFlag){
                 if(parserpacket.nFlags != 1){
-                   parserpacket.size = 0;
                    fetchTimestamp(parserpacket.size);
+                   parserpacket.size = 0;
                 }else{
                     seekFlag = false;
                 }
