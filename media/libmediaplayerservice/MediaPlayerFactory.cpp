@@ -203,11 +203,13 @@ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
     String8 filePath;
     getFileName(fd,&filePath);
 
-    /*if(strstr(filePath.string(),".apk"))
+#ifdef USE_FFPLAYER 
+    //for cts and some apk
+    if(strstr(filePath.string(),".apk"))
     {
-        return NU_PLAYER;
-    }*/
-
+        return STAGEFRIGHT_PLAYER;
+    }
+#endif 
     if(strstr(filePath.string(),".tv"))
     {
         return STAGEFRIGHT_PLAYER;
