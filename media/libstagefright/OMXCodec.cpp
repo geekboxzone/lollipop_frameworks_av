@@ -343,7 +343,12 @@ void OMXCodec::findMatchingCodecs(
         if (matchComponentName && strcmp(componentName, matchComponentName)) {
             continue;
         }
-
+#ifdef USE_SOFT_HEVC
+        if (!strcmp(mime,"video/hevc") && !strcmp(componentName,"RkVpuDecoder")) {
+            ALOGV("====is video hevc=======");
+            continue;
+        }
+#endif
         // When requesting software-only codecs, only push software codecs
         // When requesting hardware-only codecs, only push hardware codecs
         // When there is request neither for software-only nor for
