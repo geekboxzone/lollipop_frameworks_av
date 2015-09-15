@@ -199,7 +199,12 @@ static VideoFrame *extractVideoFrameWithCodecFlags(
     if(!strcmp(mime,"video/hevc")){
         frameTimeUs = 0;
     }
-    if(!strcmp(mime,"video/x-vnd.on2.vp9")){
+#ifdef USE_SOFT_HEVC
+	if(!strcmp(mime,"video/hevc")) {
+        softwareDec = 1;
+	}
+#endif
+    if(!strcmp(mime,"video/x-vnd.on2.vp9") ){
         softwareDec = 1;
     }
 

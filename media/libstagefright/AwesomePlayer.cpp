@@ -450,8 +450,8 @@ status_t AwesomePlayer::setDataSource(const sp<IStreamSource> &source) {
 status_t AwesomePlayer::setDataSource_l(
         const sp<DataSource> &dataSource) {
     sp<MediaExtractor> extractor = MediaExtractor::Create(dataSource, mMime.string(), true,filePath.string());
-
     if (extractor == NULL) {
+        ALOGE("MediaExtractor create failed");
         return UNKNOWN_ERROR;
     }
 
@@ -1823,7 +1823,14 @@ status_t AwesomePlayer::initVideoDecoder(uint32_t flags) {
     ALOGV("initVideoDecoder flags=0x%x", flags);
     const char *mime ;
     (mVideoTrack->getFormat())->findCString(kKeyMIMEType, &mime);
-
+#ifdef USE_SOFT_HEVC
+    if(!strcmp("video/hevc",mime)){
+        flags = OMXCodec::kSoftwareCodecsOnly;
+        if (mDecryptHandle != NULL) {
+            flags |= OMXCodec::kEnableGrallocUsageProtected;
+        }
+    }
+#endif
     if(!strcmp("video/x-vnd.on2.vp9",mime)){
         flags = OMXCodec::kSoftwareCodecsOnly;
         if (mDecryptHandle != NULL) {
