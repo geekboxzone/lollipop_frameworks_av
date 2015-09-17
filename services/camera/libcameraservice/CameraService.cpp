@@ -671,13 +671,14 @@ bool CameraService::canConnectUnsafe(int cameraId,
 				
 				return true;
 			}
-			ALOGW("CameraService::connect X (pid %d, \"%s\") rejected"
-	                " (camera %d is still busy).", callingPid,
-	                clientName8.string(), i);
-	        return false;
 	    }
 	}
-
+	if(mBusy[cameraId]) {
+		ALOGW("CameraService::connect X (pid %d, \"%s\") rejected"
+        	" (camera %d is still busy).", callingPid,
+        	clientName8.string(), cameraId);
+		return false;
+	}
     return true;
 }
 
