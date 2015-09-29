@@ -3763,10 +3763,11 @@ status_t ACodec::getPortFormat(OMX_U32 portIndex, sp<AMessage> &notify) {
                     InitOMXParams(&params);
                     params.nPortIndex = portIndex;
 
-                    CHECK_EQ(mOMX->getParameter(
+                    if(mOMX->getParameter(
                                 mNode, OMX_IndexParamAudioMp3,
-                                &params, sizeof(params)),
-                             (status_t)OK);
+                                &params, sizeof(params)) != (status_t)OK) {
+                        return OK;
+                    }
 
                     notify->setString("mime", MEDIA_MIMETYPE_AUDIO_MPEG);
                     notify->setInt32("channel-count", params.nChannels);
