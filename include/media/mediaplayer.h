@@ -142,28 +142,6 @@ enum media_info_type {
 
 	//xiaomi, for Conrol pause after loading start,add by xhr
     MEDIA_INFO_PLAYING_END = 902,
-	
-	    //95xx
-    MEDIA_INFO_BLURAY_COMPLETE  = 950,
-    MEDIA_INFO_BLURAY_REPORT_VIDEO_PID  = 951,/* $ add by xhr $ 20130707 $ for notify ts stream track PID $ Bluray Program $ */
-    MEDIA_INFO_BLURAY_REPORT_AUDIO_PID  = 952,/* $ add by xhr $ 20130707 $ for notify ts stream track PID $ Bluray Program $ */
-    MEDIA_INFO_BLURAY_REPORT_SUBTITLE_PID = 953,/* $ add by xhr $ 20130707 $ for notify ts stream track PID $ Bluray Program $ */
-
-
-    MEDIA_INFO_STOP_AUDIOPLAYERCALL = 960,    /* $ add by xhr $ 20140527 $ for stop audio play that  huawei program $ */
-
-    MEDIA_INFO_GET_VIDEO_TRACK_INFOR = 961,
-    MEDIA_INFO_GET_AUDIO_TRACK_INFOR = 962,
-    MEDIA_INFO_GET_SUBTITLE_TRACK_INFOR = 963,
-    MEDIA_INFO_GET_PLAYING_AUDIO_TRACK_INDEX = 964,
-    MEDIA_INFO_GET_PLAYING_SUBTITLE_TRACK_INDEX = 965,
-    MEDIA_INFO_SET_AUDIO_TRACK = 966,
-    MEDIA_INFO_SET_SUBTITLE_TRACK = 967,
-    MEDIA_INFO_GET_SUBTITLE_VISIBLE = 968,
-    MEDIA_INFO_SET_SUBTITLE_VISIBLE = 969,
-    MEDIA_INFO_SET_VIDEO_SURFACEVIEW_ZORDER = 970,
-    MEDIA_INFO_SET_MAX_QUEUE_SIZE = 971,
-    MEDIA_INFO_GET_WHETHER_DOBLY = 972,
 };
 
 
