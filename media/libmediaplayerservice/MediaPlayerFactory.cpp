@@ -166,6 +166,31 @@ void MediaPlayerFactory::unregisterFactory(player_type type) {
     }                                                   \
                                                         \
     return ret;
+
+#define GET_PLAYER_TYPE_IMPL_CTS(a...)                      \
+    Mutex::Autolock lock_(&sLock);                      \
+                                                        \
+		player_type ret = STAGEFRIGHT_PLAYER;           		          \
+		float bestScore = 0.0;                           		\
+                                                        \
+    for (size_t i = 0; i < sFactoryMap.size(); ++i) {   \
+                                                        \
+        IFactory* v = sFactoryMap.valueAt(i);           \
+        float thisScore;                                \
+        CHECK(v != NULL);                               \
+        thisScore = v->scoreFactory(a, bestScore);      \
+        if (thisScore > bestScore) {                    \
+            ret = sFactoryMap.keyAt(i);                 \
+            bestScore = thisScore;                      \
+        }                                               \
+    }                                                   \
+                                                        \
+    if (0.0 == bestScore) {                             \
+        ret = STAGEFRIGHT_PLAYER;                       \
+    }                                                   \
+                                                        \
+    return ret;
+
 #endif
 
 player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
@@ -202,12 +227,11 @@ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
                                               int64_t length) {
     String8 filePath;
     getFileName(fd,&filePath);
-
 #ifdef USE_FFPLAYER 
     //for cts and some apk
     if(strstr(filePath.string(),".apk"))
     {
-        return STAGEFRIGHT_PLAYER;
+        GET_PLAYER_TYPE_IMPL_CTS(client, fd, offset, length);
     }
 #endif 
     if(strstr(filePath.string(),".tv"))
@@ -364,6 +388,11 @@ class NuPlayerFactory : public MediaPlayerFactory::IFactory {
             return kOurScore;
         }
 
+        if (!strncasecmp("http://", url, 7)
+                || !strncasecmp("https://", url, 8)) {
+            return kOurScore;
+        }
+
         return 0.0;
     }
 
@@ -485,6 +514,18 @@ public:
         }
         return 0.0;
     }
+    virtual float scoreFactory(const sp<IMediaPlayer>& /*client*/,
+                               int fd,
+                               int64_t offset,
+                               int64_t length,
+                               float /*curScore*/) {
+
+        return 0.0;
+    }
+
+
+
+
     virtual sp<MediaPlayerBase> createPlayer() {
         ALOGI(" createFFPlayer");
         return new FFPlayer();
