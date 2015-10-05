@@ -195,6 +195,13 @@ struct id3_header {
 
     if (header.version_major == 4) {
         void *copy = malloc(size);
+        if (copy == NULL) {
+            free(mData);
+            mData = NULL;
+            ALOGE("b/24623447, no more memory");
+            return false;
+        }
+
         memcpy(copy, mData, size);
 
         bool success = removeUnsynchronizationV2_4(false /* iTunesHack */);
@@ -235,7 +242,14 @@ struct id3_header {
             return false;
         }
 
-        size_t extendedHeaderSize = U32_AT(&mData[0]) + 4;
+        size_t extendedHeaderSize = U32_AT(&mData[0]);
+        if (extendedHeaderSize > SIZE_MAX - 4) {
+            free(mData);
+            mData = NULL;
+            ALOGE("b/24623447, extendedHeaderSize is too large");
+            return false;
+        }
+        extendedHeaderSize += 4;
 
         if (extendedHeaderSize > mSize) {
             free(mData);
@@ -253,7 +267,10 @@ struct id3_header {
             if (extendedHeaderSize >= 10) {
                 size_t paddingSize = U32_AT(&mData[6]);
 
-                if (mFirstFrameOffset + paddingSize > mSize) {
+                if (paddingSize > SIZE_MAX - mFirstFrameOffset) {
+                    ALOGE("b/24623447, paddingSize is too large");
+                }
+                if (paddingSize > mSize - mFirstFrameOffset) {
                     free(mData);
                     mData = NULL;
 
