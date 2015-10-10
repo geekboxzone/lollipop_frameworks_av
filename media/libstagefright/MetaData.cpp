@@ -294,7 +294,7 @@ void* MetaData::typed_data::allocateStorage(size_t size) {
     if (usesReservoir()) {
         return &u.reservoir;
     }
- 
+    u.ext_data = malloc(mSize);
     if (u.ext_data == NULL) {
         ALOGE("Couldn't allocate %zu bytes for item", size);
         mSize = 0;
