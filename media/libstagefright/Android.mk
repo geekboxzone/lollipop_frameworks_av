@@ -11,7 +11,8 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 include frameworks/av/media/libstagefright/codecs/common/Config.mk
 
-ifeq ($(TARGET_BOARD_PLATFORM), rk312x,rk3188)
+
+ifneq ($(filter rk312x rk3188, $(TARGET_BOARD_PLATFORM)), )
 	LOCAL_CFLAGS += -DUSE_SOFT_HEVC
 endif
 
