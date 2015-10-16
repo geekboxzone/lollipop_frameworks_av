@@ -129,7 +129,7 @@ public:
     // Sets the start time us (in system time), samples before which should
     // be dropped and not submitted to encoder
     void setSkipFramesBeforeUs(int64_t startTimeUs);
-
+    void setFrameRate(int32_t frameRate);
 protected:
     // BufferQueue::ConsumerListener interface, called when a new frame of
     // data is available.  If we're executing and a codec buffer is
@@ -276,6 +276,8 @@ private:
 
     void onMessageReceived(const sp<AMessage> &msg);
 
+    nsecs_t next_time;
+    nsecs_t interval_time;
     DISALLOW_EVIL_CONSTRUCTORS(GraphicBufferSource);
 };
 
