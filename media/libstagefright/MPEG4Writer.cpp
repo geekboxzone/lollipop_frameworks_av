@@ -2077,7 +2077,7 @@ void MPEG4Writer::Track::updateDriftTime(const sp<MetaData>& meta) {
 status_t MPEG4Writer::Track::threadEntry() {
     int32_t count = 0;
     const int64_t interleaveDurationUs = mOwner->interleaveDuration();
-    const bool hasMultipleTracks = (mOwner->numTracks() > 1);
+    const bool hasMultipleTracks = (mOwner->numTracks() >= 1);
     int64_t chunkTimestampUs = 0;
     int32_t nChunks = 0;
     int32_t nZeroLengthFrames = 0;
