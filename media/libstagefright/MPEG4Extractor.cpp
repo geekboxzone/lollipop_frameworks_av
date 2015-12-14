@@ -3413,11 +3413,18 @@ status_t MPEG4Source::start(MetaData *params) {
     } else {
         mWantsNALFragments = false;
     }
+    int32_t tmp;
+    CHECK(mFormat->findInt32(kKeyMaxInputSize, &tmp));
+    size_t max_size = tmp;
 
+    // A somewhat arbitrary limit that should be sufficient for 8k video frames
+    // If you see the message below for a valid input stream: increase the limit
+    if (max_size > 64 * 1024 * 1024) {
+        ALOGE("bogus max input size: %zu", max_size);
+        return ERROR_MALFORMED;
+    }
     mGroup = new MediaBufferGroup;
 
-    int32_t max_size;
-    CHECK(mFormat->findInt32(kKeyMaxInputSize, &max_size));
 
 #ifdef QT_PCM
     if (mIsPCM)
@@ -3432,6 +3439,8 @@ status_t MPEG4Source::start(MetaData *params) {
     mSrcBuffer = new (std::nothrow) uint8_t[max_size];
     if (mSrcBuffer == NULL) {
         // file probably specified a bad max size
+        delete mGroup;
+        mGroup = NULL;
         return ERROR_MALFORMED;
     }
 
