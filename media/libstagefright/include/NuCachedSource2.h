@@ -65,6 +65,10 @@ struct NuCachedSource2 : public DataSource {
             KeyedVector<String8, String8> *headers,
             String8 *cacheConfig,
             bool *disconnectAtHighwatermark);
+    NuCachedSource2(
+            const sp<DataSource> &source,
+            const char *cacheConfig,
+            bool disconnectAtHighwatermark);
 
 protected:
     virtual ~NuCachedSource2();
@@ -72,10 +76,6 @@ protected:
 private:
     friend struct AHandlerReflector<NuCachedSource2>;
 
-    NuCachedSource2(
-            const sp<DataSource> &source,
-            const char *cacheConfig,
-            bool disconnectAtHighwatermark);
 
     enum {
         kPageSize                       = 65536,
