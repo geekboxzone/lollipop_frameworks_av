@@ -100,17 +100,9 @@ GraphicBufferSource::GraphicBufferSource(OMXNodeInstance* nodeInstance,
         return;
     }
 
-    interval_time = ms2ns(1000) / 60;
-    next_time = 0;
     CHECK(mInitCheck == NO_ERROR);
 }
 
-void GraphicBufferSource::setFrameRate(int32_t frameRate){
-    interval_time = ms2ns(1000) / frameRate;
-    next_time = 0;
-    ALOGD("    danielycycyc   GraphicBufferSource::setFrameRate()_%d  interval_time = %lld(%lld)  mFrameRate = %d\n", 
-        __LINE__, ns2ms(interval_time), interval_time, frameRate);
-}
 GraphicBufferSource::~GraphicBufferSource() {
     ALOGV("~GraphicBufferSource");
     if (mConsumer != NULL) {
@@ -454,34 +446,7 @@ bool GraphicBufferSource::fillCodecBuffer_l() {
         if (mSkipFramesBeforeNs > 0) {
             item.mTimestamp -= mSkipFramesBeforeNs;
         }
-#if 0
-    err = submitBuffer_l(item, cbi);    
-#else
-        nsecs_t now_t = systemTime();
-        bool bSubmitB = false;
-        if(next_time == 0){
-            next_time = now_t + interval_time;
-            bSubmitB = true;
-        }else{
-            if(now_t >= next_time){
-                nsecs_t diff_t = now_t - next_time;
-                nsecs_t multiple = diff_t / interval_time;
-                if(multiple > 0){
-                    next_time += (interval_time * (multiple + 1));
-                }else{
-                    next_time += interval_time;
-                }
-                bSubmitB = true;
-            }
-        }
-        //ALOGD(" danielycycyc   GraphicBufferSource::fillCodecBuffer_l()__%d,    now_t = %lld  next_time = %lld   bSubmitB = %d\n ", 
-       //     __LINE__, ns2ms(now_t), ns2ms(next_time), bSubmitB);
-        if(bSubmitB){
-            err = submitBuffer_l(item, cbi);
-        }else{
-            err = BAD_VALUE;
-        }
-#endif
+        err = submitBuffer_l(item, cbi);
     }
 
     if (err != OK) {

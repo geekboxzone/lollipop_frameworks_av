@@ -2971,7 +2971,7 @@ status_t ACodec::setupAVCEncoderParameters(const sp<AMessage> &msg) {
         h264type.bUseHadamard = OMX_TRUE;
         h264type.nRefFrames = 1;
         h264type.nBFrames = 0;
-        h264type.nPFrames = (OMX_U32)frameRate;	//setPFramesSpacing(iFrameInterval, frameRate);
+        h264type.nPFrames = setPFramesSpacing(iFrameInterval, frameRate);
         if (h264type.nPFrames == 0) {
             h264type.nAllowedPictureTypes = OMX_VIDEO_PictureTypeI;
         }

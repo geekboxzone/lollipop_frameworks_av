@@ -169,8 +169,7 @@ OMXNodeInstance::OMXNodeInstance(
       mNodeID(0),
       mHandle(NULL),
       mObserver(observer),
-      mDying(false),
-      mFrameRate(0) 
+      mDying(false)
 #ifdef __LP64__
       , mBufferIDCount(0)
 #endif
@@ -208,10 +207,6 @@ void OMXNodeInstance::setGraphicBufferSource(
     Mutex::Autolock autoLock(mGraphicBufferSourceLock);
     CLOG_INTERNAL(setGraphicBufferSource, "%p", bufferSource.get());
     mGraphicBufferSource = bufferSource;
-    if(mFrameRate > 0 && mGraphicBufferSource != NULL){
-        ALOGD("   <%s>_%d     mFrameRate = %d \n", __func__, __LINE__, mFrameRate);
-        mGraphicBufferSource->setFrameRate(mFrameRate);
-    }
 }
 
 OMX *OMXNodeInstance::owner() {
@@ -400,14 +395,6 @@ status_t OMXNodeInstance::setParameter(
     OMX_ERRORTYPE err = OMX_SetParameter(
             mHandle, index, const_cast<void *>(params));
     CLOG_IF_ERROR(setParameter, err, "%s(%#x)", asString(extIndex), index);
-    if(index == OMX_IndexParamVideoAvc && params != NULL){
-        OMX_VIDEO_PARAM_AVCTYPE * h264type = (OMX_VIDEO_PARAM_AVCTYPE *)params;
-        mFrameRate = h264type->nPFrames;
-        if(mFrameRate > 0 && mGraphicBufferSource != NULL){
-            ALOGD("   <%s>_%d     mFrameRate = %d \n", __func__, __LINE__, mFrameRate);
-            mGraphicBufferSource->setFrameRate(mFrameRate);
-        }
-    }
     return StatusFromOMXError(err);
 }
 
