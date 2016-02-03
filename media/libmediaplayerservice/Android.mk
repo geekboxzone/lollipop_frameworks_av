@@ -10,7 +10,7 @@ ifneq ($(filter rk%, $(TARGET_BOARD_PLATFORM)), )
 LOCAL_CFLAGS := -DAVS50
 BUILD_FF_PLAYER := true
 else
-BUILD_FF_PLAYER := true
+BUILD_FF_PLAYER := false
 endif
 
 LOCAL_SRC_FILES :=               \
