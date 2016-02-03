@@ -34,6 +34,7 @@
 #include <media/stagefright/foundation/ADebug.h>
 #include <media/stagefright/foundation/AMessage.h>
 #include <media/stagefright/foundation/hexdump.h>
+#include "../wifi-display/config.h"
 
 namespace android {
 
@@ -266,6 +267,8 @@ bool ANetworkSession::Session::wantsToWrite() {
 }
 
 status_t ANetworkSession::Session::readMore() {
+    
+    //ALOGD_IF(RTP_DEBUG, " mMode = %d 0-RTSP 1-DATAGRAM 2-WEBSOCKET mstate = %d", mMode, mState);
     if (mState == DATAGRAM) {
         CHECK_EQ(mMode, MODE_DATAGRAM);
 
@@ -282,7 +285,7 @@ status_t ANetworkSession::Session::readMore() {
                         mSocket, buf->data(), buf->capacity(), 0,
                         (struct sockaddr *)&remoteAddr, &remoteAddrLen);
             } while (n < 0 && errno == EINTR);
-
+            
             err = OK;
             if (n < 0) {
                 err = -errno;
@@ -307,12 +310,13 @@ status_t ANetworkSession::Session::readMore() {
                             (ip >> 16) & 0xff,
                             (ip >> 8) & 0xff,
                             ip & 0xff).c_str());
-
+            
                 notify->setInt32("fromPort", ntohs(remoteAddr.sin_port));
-
                 notify->setBuffer("data", buf);
                 notify->post();
             }
+            
+        	ALOGD_IF(RTP_DEBUG, " recvfrom socket %d n %d err %d", mSocket, n, err);
         } while (err == OK);
 
         if (err == -EAGAIN) {
@@ -356,7 +360,6 @@ status_t ANetworkSession::Session::readMore() {
     } else {
         err = -ECONNRESET;
     }
-
     if (mMode == MODE_DATAGRAM) {
         // TCP stream carrying 16-bit length-prefixed datagrams.
 
@@ -366,10 +369,19 @@ status_t ANetworkSession::Session::readMore() {
             if (mInBuffer.size() < packetSize + 2) {
                 break;
             }
-
+            
             sp<ABuffer> packet = new ABuffer(packetSize);
             memcpy(packet->data(), mInBuffer.c_str() + 2, packetSize);
-
+#if 0
+            {
+            FILE* fp = NULL;
+            fp = fopen("/data/test/dump.txt", "ab+");
+            if(fp != NULL){
+                fwrite(mInBuffer.c_str(),mInBuffer.size(),1,fp);
+            }
+            fclose(fp);
+            }
+#endif
             int64_t nowUs = ALooper::GetNowUs();
             packet->meta()->setInt64("arrivalTimeUs", nowUs);
 

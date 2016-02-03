@@ -112,7 +112,7 @@ void NuPlayer::DecoderBase::scheduleRequestBuffers() {
     }
     mRequestInputBuffersPending = true;
     sp<AMessage> msg = new AMessage(kWhatRequestInputBuffers, id());
-    msg->post(10 * 1000ll);
+    msg->post(2 * 1000ll);
 }
 
 void NuPlayer::DecoderBase::onMessageReceived(const sp<AMessage> &msg) {

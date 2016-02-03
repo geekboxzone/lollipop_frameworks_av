@@ -35,8 +35,17 @@
 
 #include "avc_utils.h"
 #include "ATSParser.h"
-
+#include <utils/CallStack.h>
+#include "config.h"
 namespace android {
+
+static void dump(void)
+{
+   android::CallStack stack;
+   stack.update();
+   // stack.dump();
+   ALOGD("%s",stack.toString().string());
+}
 
 NuPlayer::Decoder::Decoder(
         const sp<AMessage> &notify,
@@ -317,7 +326,7 @@ void NuPlayer::Decoder::doRequestBuffers() {
         size_t bufferIx = *mDequeuedInputBuffers.begin();
         sp<AMessage> msg = new AMessage();
         msg->setSize("buffer-ix", bufferIx);
-        err = fetchInputData(msg);
+        err = fetchInputData(msg); /************h264 NAL*****************/
         if (err != OK) {
             break;
         }
@@ -327,6 +336,15 @@ void NuPlayer::Decoder::doRequestBuffers() {
                 || !onInputBufferFetched(msg)) {
             mPendingInputMessages.push_back(msg);
         }
+
+		struct timeval timeval1;
+		gettimeofday(&timeval1,NULL);
+		sp<ABuffer> buffer;
+		bool hasBuffer = msg->findBuffer("buffer", &buffer);
+		int64_t timeUs;
+		CHECK(buffer->meta()->findInt64("timeUs", &timeUs));
+		ALOGD_IF(DEBUG_DELAY_TIME,"TimeDelayCount: doRequestBuffers timeus %lld  currenttime %ld:%ld err %d EWOULDBLOCK %d", timeUs, 
+			timeval1.tv_sec, timeval1.tv_usec, err, EWOULDBLOCK);    
     }
 
     if (err == -EWOULDBLOCK
@@ -500,8 +518,18 @@ bool NuPlayer::Decoder::handleAnOutputBuffer() {
     notifyResumeCompleteIfNecessary();
 
     if (mRenderer != NULL) {
-        // send the buffer to renderer.
-        mRenderer->queueBuffer(mIsAudio, buffer, reply);
+		// send the buffer to renderer.
+		int64_t start_time ;
+		int64_t audio_start_time;
+		mSource->Wifidisplay_get_TimeInfo(&start_time,&audio_start_time );
+		
+		mRenderer->Wifidisplay_set_TimeInfo(start_time,audio_start_time);
+		/*		if(mIsAudio == 0)
+		mRenderer->rendervideobuffer(mIsAudio, buffer, reply);
+		else
+		mRenderer->queueBuffer(mIsAudio, buffer, reply);
+		*/
+		mRenderer->queueBuffer(mIsAudio, buffer, reply);
         if (flags & MediaCodec::BUFFER_FLAG_EOS) {
             mRenderer->queueEOS(mIsAudio, ERROR_END_OF_STREAM);
         }
@@ -622,7 +650,7 @@ status_t NuPlayer::Decoder::fetchInputData(sp<AMessage> &reply) {
         }
 
         dropAccessUnit = false;
-        if (!mIsAudio
+        /*if (!mIsAudio
                 && !mIsSecure
                 && mRenderer->getVideoLateByUs() > 100000ll
                 && mIsVideoAVC
@@ -630,6 +658,7 @@ status_t NuPlayer::Decoder::fetchInputData(sp<AMessage> &reply) {
             dropAccessUnit = true;
             ++mNumFramesDropped;
         }
+	*/
     } while (dropAccessUnit);
 
     // ALOGV("returned a valid buffer of %s data", mIsAudio ? "mIsAudio" : "video");
@@ -655,7 +684,7 @@ bool NuPlayer::Decoder::onInputBufferFetched(const sp<AMessage> &msg) {
     CHECK(msg->findSize("buffer-ix", &bufferIx));
     CHECK_LT(bufferIx, mInputBuffers.size());
     sp<ABuffer> codecBuffer = mInputBuffers[bufferIx];
-
+    //dump();
     sp<ABuffer> buffer;
     bool hasBuffer = msg->findBuffer("buffer", &buffer);
 
@@ -737,7 +766,10 @@ bool NuPlayer::Decoder::onInputBufferFetched(const sp<AMessage> &msg) {
         int64_t timeUs = 0;
         uint32_t flags = 0;
         CHECK(buffer->meta()->findInt64("timeUs", &timeUs));
-
+        struct timeval timeval1;
+        gettimeofday(&timeval1,NULL);
+        ALOGD_IF(DEBUG_DELAY_TIME,"TimeDelayCount: onInputBufferFetched timeus %lld  currenttime %ld:%ld ", timeUs, 
+            timeval1.tv_sec, timeval1.tv_usec);    
         int32_t eos, csd;
         // we do not expect SYNCFRAME for decoder
         if (buffer->meta()->findInt32("eos", &eos) && eos) {

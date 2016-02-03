@@ -51,6 +51,8 @@
 
 #include "include/avc_utils.h"
 #include <cutils/properties.h>
+#include "wifi-display/config.h"
+#include <utils/CallStack.h>
 namespace android {
 
 // OMX errors are directly mapped into status_t range if
@@ -4325,8 +4327,7 @@ bool ACodec::BaseState::onOMXEvent(
 }
 
 bool ACodec::BaseState::onOMXEmptyBufferDone(IOMX::buffer_id bufferID) {
-    ALOGV("[%s] onOMXEmptyBufferDone %p",
-         mCodec->mComponentName.c_str(), bufferID);
+
 
     BufferInfo *info =
         mCodec->findBufferByID(kPortIndexInput, bufferID);
@@ -4342,7 +4343,8 @@ bool ACodec::BaseState::onOMXEmptyBufferDone(IOMX::buffer_id bufferID) {
     info->mData->setMediaBufferBase(NULL);
 
     PortMode mode = getPortMode(kPortIndexInput);
-
+    ALOGV("[%s] onOMXEmptyBufferDone %p mode %d",
+         mCodec->mComponentName.c_str(), bufferID, mode);
     switch (mode) {
         case KEEP_BUFFERS:
             break;
@@ -4495,7 +4497,9 @@ void ACodec::BaseState::onInputBufferFilled(const sp<AMessage> &msg) {
                         mCodec->submitOutputMetaDataBuffer();
                     }
                 }
-
+                struct timeval timeval1;
+                gettimeofday(&timeval1,NULL);
+                ALOGD_IF(DEBUG_DELAY_TIME,"TimeDelayCount: onInputBufferFilled timeus %lld currenttime %ld:%ld ", timeUs, timeval1.tv_sec, timeval1.tv_usec);
                 CHECK_EQ(mCodec->mOMX->emptyBuffer(
                             mCodec->mNode,
                             bufferID,
@@ -4506,7 +4510,8 @@ void ACodec::BaseState::onInputBufferFilled(const sp<AMessage> &msg) {
                          (status_t)OK);
 
                 info->mStatus = BufferInfo::OWNED_BY_COMPONENT;
-
+                
+                ALOGD_IF(DEBUG_DELAY_TIME,"TimeDelayCount: onInputBufferFilled timeus %lld after emptyBuffer eos %d", timeUs, eos);
                 if (!eos) {
                     getMoreInputDataIfPossible();
                 } else {
@@ -4528,7 +4533,6 @@ void ACodec::BaseState::onInputBufferFilled(const sp<AMessage> &msg) {
 
                 ALOGV("[%s] calling emptyBuffer %p signalling EOS",
                      mCodec->mComponentName.c_str(), bufferID);
-
                 CHECK_EQ(mCodec->mOMX->emptyBuffer(
                             mCodec->mNode,
                             bufferID,
@@ -4577,7 +4581,6 @@ void ACodec::BaseState::getMoreInputDataIfPossible() {
     if (eligible == NULL) {
         return;
     }
-
     postFillThisBuffer(eligible);
 }
 
@@ -4586,7 +4589,7 @@ bool ACodec::BaseState::onOMXFillBufferDone(
         size_t rangeOffset, size_t rangeLength,
         OMX_U32 flags,
         int64_t timeUs) {
-    ALOGV("[%s] onOMXFillBufferDone %u time %" PRId64 " us, flags = 0x%08x",
+    ALOGD_IF(DEBUG_DELAY_TIME,"TimeDelayCount: [%s] onOMXFillBufferDone %u time %" PRId64 " us, flags = 0x%08x",
          mCodec->mComponentName.c_str(), bufferID, timeUs, flags);
 
     ssize_t index;
@@ -4641,7 +4644,6 @@ bool ACodec::BaseState::onOMXFillBufferDone(
             if (!mCodec->mSentFormat && rangeLength > 0) {
                 mCodec->sendFormatChange(reply);
             }
-
             if (mCodec->mUseMetadataOnEncoderOutput) {
                 native_handle_t* handle =
                         *(native_handle_t**)(info->mData->data() + 4);
@@ -4669,6 +4671,7 @@ bool ACodec::BaseState::onOMXFillBufferDone(
             notify->setInt32("buffer-id", info->mBufferID);
             notify->setBuffer("buffer", info->mData);
             notify->setInt32("flags", flags);
+            notify->setInt64("test-timeus", timeUs);
 
             reply->setInt32("buffer-id", info->mBufferID);
 
@@ -4679,7 +4682,7 @@ bool ACodec::BaseState::onOMXFillBufferDone(
             info->mStatus = BufferInfo::OWNED_BY_DOWNSTREAM;
 
             if (flags & OMX_BUFFERFLAG_EOS) {
-                ALOGV("[%s] saw output EOS", mCodec->mComponentName.c_str());
+                ALOGD("[%s] saw output EOS", mCodec->mComponentName.c_str());
 
                 sp<AMessage> notify = mCodec->mNotify->dup();
                 notify->setInt32("what", CodecBase::kWhatEOS);
@@ -4741,11 +4744,12 @@ void ACodec::BaseState::onOutputBufferDrained(const sp<AMessage> &msg) {
         }
 
         status_t err;
+        /*
         err = native_window_set_buffers_timestamp(mCodec->mNativeWindow.get(), timestampNs);
         if (err != OK) {
             ALOGW("failed to set buffer timestamp: %d", err);
         }
-
+*/
         if ((err = mCodec->mNativeWindow->queueBuffer(
                     mCodec->mNativeWindow.get(),
                     info->mGraphicBuffer.get(), -1)) == OK) {
@@ -4936,7 +4940,7 @@ bool ACodec::UninitializedState::onAllocateComponent(const sp<AMessage> &msg) {
     if(!strcmp(componentName.c_str(),"OMX.google.h264.decoder") && !strstr(prop_value,"true") ) {
         msg->setString("componentName", "OMX.rk.video_decoder.avc");
     }
-
+    
     if (msg->findString("componentName", &componentName)) {
 
         ssize_t index = matchingCodecs.add();

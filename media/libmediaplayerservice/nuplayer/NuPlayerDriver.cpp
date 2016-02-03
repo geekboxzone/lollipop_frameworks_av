@@ -61,7 +61,7 @@ NuPlayerDriver::NuPlayerDriver()
 }
 
 NuPlayerDriver::~NuPlayerDriver() {
-    ALOGV("~NuPlayerDriver(%p)", this);
+    ALOGE("~NuPlayerDriver(%p)", this);
     mLooper->stop();
 }
 

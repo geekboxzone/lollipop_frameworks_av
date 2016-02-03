@@ -5,6 +5,11 @@ include $(CLEAR_VARS)
 LOCAL_SRC_FILES:= \
         MediaSender.cpp                 \
         Parameters.cpp                  \
+        ParsedMessage.cpp               \
+        sink/LinearRegression.cpp       \
+        sink/RTPSink.cpp                \
+        sink/TunnelRenderer.cpp         \
+        sink/WifiDisplaySink.cpp        \
         rtp/RTPSender.cpp               \
         source/Converter.cpp            \
         source/MediaPuller.cpp          \
@@ -43,3 +48,26 @@ endif
 LOCAL_MODULE_TAGS:= optional
 
 include $(BUILD_SHARED_LIBRARY)
+################################################################################
+
+include $(CLEAR_VARS)
+
+LOCAL_SRC_FILES:= \
+        wfd.cpp                 \
+
+LOCAL_SHARED_LIBRARIES:= \
+        libbinder                       \
+        libgui                          \
+        libmedia                        \
+        libstagefright                  \
+        libstagefright_foundation       \
+        libstagefright_wfd              \
+        libutils                        \
+	liblog                          \
+	libcutils                       \
+
+LOCAL_MODULE:= wfd
+
+LOCAL_MODULE_TAGS := debug
+
+include $(BUILD_EXECUTABLE)

@@ -37,6 +37,9 @@
 #include <utils/KeyedVector.h>
 #include <utils/String8.h>
 #include <sys/endian.h>
+
+#include <utils/CallStack.h>
+
 #if 0
 extern "C" {
 #include <crc.h>
@@ -56,6 +59,14 @@ namespace android {
     do { unsigned tmp = y; ALOGV(x, tmp); } while (0)
 
 static const size_t kTSPacketSize = 188;
+    
+static void dump(void)
+{
+   android::CallStack stack;
+   stack.update();
+   // stack.dump();
+   ALOGD("%s",stack.toString().string());
+}
 
 struct ATSParser::Program : public RefBase {
     Program(ATSParser *parser, unsigned programNumber, unsigned programMapPID);
@@ -1114,6 +1125,7 @@ void ATSParser::Stream::signalEOS(status_t finalResult) {
     }
 }
 
+
 status_t ATSParser::Stream::parsePES(ABitReader *br) {
     if(br->numBitsLeft() < 48)
     {
@@ -1121,7 +1133,7 @@ status_t ATSParser::Stream::parsePES(ABitReader *br) {
     }
     unsigned packet_startcode_prefix = br->getBits(24);
 
-    ALOGV("packet_startcode_prefix = 0x%08x", packet_startcode_prefix);
+    ALOGD_IF(DEBUG_DELAY_TIME,"TimeDelayCount: parsePES packet_startcode_prefix = 0x%08x", packet_startcode_prefix);
 
     if(packet_startcode_prefix != 0x000001u)
     {
@@ -1221,6 +1233,11 @@ status_t ATSParser::Stream::parsePES(ABitReader *br) {
                 {
                     int64_t timeUs;
                     timeUs = mProgram->convertPTSToTimestamp(DTS);
+                    struct timeval timeval1;
+                    gettimeofday(&timeval1,NULL);
+                    ALOGD_IF(DEBUG_DELAY_TIME,"TimeDelayCount: parsePES timeus %lld PTS %lld currenttime %ld:%ld ", timeUs, DTS, 
+                        timeval1.tv_sec, timeval1.tv_usec);
+                    
  //                   LOGE("DTS timeUs = %lld", timeUs);
                 }
                 optional_bytes_remaining -= 5;
@@ -1533,6 +1550,9 @@ void ATSParser::Stream::onPayloadData(
             }
         }
         timeUs = mProgram->convertPTSToTimestamp(PTS);
+        struct timeval timeval2;
+        gettimeofday(&timeval2,NULL);
+        ALOGD_IF(RTP_DEBUG,"TimeDelayCount: parsePES timeUs %lld currenttime %ld:%ld", timeUs, timeval2.tv_sec, timeval2.tv_usec);
         if((timeUs + 20000000) < mProgram->mBaseTimeUs &&mProgram->mBaseTimeUs){
             mProgram->mPlusBaseTimeFlag = true;
         }
@@ -1716,7 +1736,7 @@ ATSParser::ATSParser(uint32_t flags)
     player_type = 0;
 	playStart = false;
 #ifdef TS_DEBUG
-    fp = fopen("/sdcard/net.ts","wb+");
+    fp = fopen("/data/test/net.ts","wb+");
 #endif
 }
 

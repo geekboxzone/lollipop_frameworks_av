@@ -805,8 +805,8 @@ MediaBuffer *ElementaryStreamQueue::dequeueAccessUnitHEVC() {
            }
            if(parserpacket.size > 0 && seekFlag){
                 if(parserpacket.nFlags != 1){
-                   fetchTimestamp(parserpacket.size);
                    parserpacket.size = 0;
+                   fetchTimestamp(parserpacket.size);
                 }else{
                     seekFlag = false;
                 }
@@ -1066,7 +1066,7 @@ MediaBuffer *ElementaryStreamQueue::dequeueAccessUnitH264_Wireless()
     size_t nalSize;
     bool foundSlice = false;
 
-    while ((err = getNextNALUnit(&data, &size, &nalStart, &nalSize)) == OK) {
+    while ((err = getNextNALUnit(&data, &size, &nalStart, &nalSize, true)) == OK) {
  //       CHECK_GT(nalSize, 0u);
         if(nalSize <= 0)
         {
@@ -1158,6 +1158,14 @@ MediaBuffer *ElementaryStreamQueue::dequeueAccessUnitH264_Wireless()
 	 	continue;
 	  }
 
+        if(data == NULL && size == 0 && foundSlice == true && flush == false) {
+            NALPosition pos;
+            pos.nalOffset = nalStart - mBuffer->data();
+            pos.nalSize = nalSize;
+            nals.push(pos);
+            totalSize += nalSize;
+            flush = true;
+        }
 
         if (flush) {
             // The access unit will contain all nal units up to, but excluding

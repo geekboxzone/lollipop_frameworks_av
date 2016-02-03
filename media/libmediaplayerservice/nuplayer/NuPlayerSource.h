@@ -93,7 +93,14 @@ struct NuPlayer::Source : public AHandler {
     virtual size_t getTrackCount() const {
         return 0;
     }
+//add by wgh
 
+	virtual int	getwifidisplay_info(int *info){return 0;};
+	
+	virtual int Wifidisplay_get_TimeInfo(int64_t *start_time,int64_t *audio_start_time){return 0;};
+
+
+//end wgh
     virtual sp<AMessage> getTrackInfo(size_t /* trackIndex */) const {
         return NULL;
     }

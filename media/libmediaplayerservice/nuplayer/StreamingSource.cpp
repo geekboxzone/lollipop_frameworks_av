@@ -29,7 +29,8 @@
 #include <media/stagefright/foundation/AMessage.h>
 #include <media/stagefright/MediaSource.h>
 #include <media/stagefright/MetaData.h>
-
+#include "../config.h"
+#include <utils/CallStack.h>
 namespace android {
 
 NuPlayer::StreamingSource::StreamingSource(
@@ -37,8 +38,12 @@ NuPlayer::StreamingSource::StreamingSource(
         const sp<IStreamSource> &source)
     : Source(notify),
       mSource(source),
+      mWFDFlag(false),
+      mWFDStartSysTimeUs(0),
+      mWFDStartMediaTimeUs(0), 
       mFinalResult(OK),
       mBuffering(false) {
+      sys_time_base = streaming_audio_start_timeUs = streaming_sys_start_timeUs = StreamingSource_Sign = 0;
 }
 
 NuPlayer::StreamingSource::~StreamingSource() {
@@ -66,6 +71,11 @@ void NuPlayer::StreamingSource::start() {
     mStreamListener = new NuPlayerStreamListener(mSource, 0);
 
     uint32_t sourceFlags = mSource->flags();
+    if ((sourceFlags >> 16 & 0xFFFF) == 0x1234) {
+    	mWFDFlag = true;
+	StreamingSource_Sign = 1;
+	ALOGD("NuPlayer::StreamingSource::start sourceFlags %x",sourceFlags);
+    }
 
     uint32_t parserFlags = ATSParser::TS_TIMESTAMPS_ARE_ABSOLUTE;
     if (sourceFlags & IStreamSource::kFlagAlignedVideoData) {
@@ -84,10 +94,13 @@ status_t NuPlayer::StreamingSource::feedMoreTSData() {
 }
 
 void NuPlayer::StreamingSource::onReadBuffer() {
-    for (int32_t i = 0; i < 50; ++i) {
+    //for (int32_t i = 0; i < 100; ++i) {
+    ssize_t n;
+    do {
         char buffer[188];
         sp<AMessage> extra;
-        ssize_t n = mStreamListener->read(buffer, sizeof(buffer), &extra);
+		// 188 bytes or -11
+        n = mStreamListener->read(buffer, sizeof(buffer), &extra);
 
         if (n == 0) {
             ALOGI("input data EOS reached.");
@@ -97,21 +110,52 @@ void NuPlayer::StreamingSource::onReadBuffer() {
         } else if (n == INFO_DISCONTINUITY) {
             int32_t type = ATSParser::DISCONTINUITY_TIME;
 
-            int32_t mask;
-            if (extra != NULL
-                    && extra->findInt32(
-                        IStreamListener::kKeyDiscontinuityMask, &mask)) {
-                if (mask == 0) {
-                    ALOGE("Client specified an illegal discontinuity type.");
-                    setError(ERROR_UNSUPPORTED);
-                    break;
-                }
+		int64_t sys_timeUs;
+		int64_t mediaTimeUs;
 
-                type = mask;
+		int64_t sys_time = 0ll;
+		int64_t timeUs = 0ll;
+		int	temp;
+
+        int32_t mask;
+        if (extra != NULL
+                && extra->findInt32(
+                    IStreamListener::kKeyDiscontinuityMask, &mask)) {
+            if (mask == 0) {
+                ALOGE("Client specified an illegal discontinuity type.");
+                setError(ERROR_UNSUPPORTED);
+                break;
             }
 
-            mTSParser->signalDiscontinuity(
-                    (ATSParser::DiscontinuityType)type, extra);
+            type = mask;
+        }
+
+		extra->findInt64("timeUs", &timeUs);
+		if(!extra->findInt64("wifidisplay_sys_timeUs", &sys_time)  )
+		{
+			mTSParser->signalDiscontinuity((ATSParser::DiscontinuityType)type, extra);
+		}
+
+		if(extra->findInt32("first_packet", &temp))
+		{
+			mTSParser->set_player_type(3);// jmj for wfd
+			ALOGD("first_packet set ATsparser type 3");
+		}
+		if(StreamingSource_Sign == 1)
+		{
+			streaming_sys_start_timeUs 		= sys_time;
+			streaming_audio_start_timeUs	= 	timeUs ;
+		}
+		
+			/*if (mWFDFlag) { 
+				if (extra->findInt64("wifidisplay_sys_timeUs", &sys_timeUs) && extra->findInt64("timeUs", &mediaTimeUs)) {
+					mWFDStartSysTimeUs = sys_timeUs; 
+					 mWFDStartMediaTimeUs = mediaTimeUs;
+				}
+			} else {
+            			mTSParser->signalDiscontinuity((ATSParser::DiscontinuityType)type, extra);
+			}*/
+           // ----------------------
         } else if (n < 0) {
             break;
         } else {
@@ -137,7 +181,10 @@ void NuPlayer::StreamingSource::onReadBuffer() {
                             : ATSParser::DISCONTINUITY_FORMATCHANGE,
                         extra);
             } else {
+            	//this way 188 bytes
                 status_t err = mTSParser->feedTSPacket(buffer, sizeof(buffer));
+				int64_t systime = systemTime(SYSTEM_TIME_MONOTONIC) / 1000ll; 
+				ALOGV("	mTSParser->feedTSPacket	systime = %lld. ", systime);
 
                 if (err != OK) {
                     ALOGE("TS Parser returned error %d", err);
@@ -148,7 +195,7 @@ void NuPlayer::StreamingSource::onReadBuffer() {
                 }
             }
         }
-    }
+    }while(n > 0);
 }
 
 status_t NuPlayer::StreamingSource::postReadBuffer() {
@@ -171,7 +218,7 @@ bool NuPlayer::StreamingSource::haveSufficientDataOnAllTracks() {
     // We're going to buffer at least 2 secs worth data on all tracks before
     // starting playback (both at startup and after a seek).
 
-    static const int64_t kMinDurationUs = 2000000ll;
+    static const int64_t kMinDurationUs = 5000ll;
 
     sp<AnotherPacketSource> audioTrack = getSource(true /*audio*/);
     sp<AnotherPacketSource> videoTrack = getSource(false /*audio*/);
@@ -191,7 +238,7 @@ bool NuPlayer::StreamingSource::haveSufficientDataOnAllTracks() {
             && (durationUs = videoTrack->getBufferedDurationUs(&err))
                     < kMinDurationUs
             && err == OK) {
-        ALOGV("video track doesn't have enough data yet. (%.2f secs buffered)",
+        ALOGE("video track doesn't have enough data yet. (%.2f secs buffered)",
               durationUs / 1E6);
         return false;
     }
@@ -241,6 +288,7 @@ status_t NuPlayer::StreamingSource::dequeueAccessUnit(
     if (!source->hasBufferAvailable(&finalResult)) {
         return finalResult == OK ? -EWOULDBLOCK : finalResult;
     }
+	int64_t  systime = systemTime(SYSTEM_TIME_MONOTONIC) / 1000ll; 
 
     status_t err = source->dequeueAccessUnit(accessUnit);
 
@@ -248,7 +296,7 @@ status_t NuPlayer::StreamingSource::dequeueAccessUnit(
     if (err == OK) {
         int64_t timeUs;
         CHECK((*accessUnit)->meta()->findInt64("timeUs", &timeUs));
-        ALOGV("dequeueAccessUnit timeUs=%lld us", timeUs);
+        ALOGD_IF(DEBUG_DELAY_TIME,"dequeueAccessUnit timeUs=%lld us is video %d ", timeUs, !audio);
     }
 #endif
 
@@ -278,6 +326,43 @@ void NuPlayer::StreamingSource::onMessageReceived(
         }
     }
 }
+
+bool NuPlayer::StreamingSource::isWFDStreaming()
+{
+    return mWFDFlag != 0;
+}
+
+int64_t NuPlayer::StreamingSource::getWFDStartSysTimeUs() {
+    return  mWFDStartSysTimeUs;
+}
+
+int64_t NuPlayer::StreamingSource::getWFDStartMediaTimeUs() {
+    return  mWFDStartMediaTimeUs; 
+}
+
+uint32_t NuPlayer::StreamingSource::flags() const {
+     return 0;
+}
+
+int	NuPlayer::StreamingSource::getwifidisplay_info(int *info)
+{
+	return (StreamingSource_Sign != 0);
+};
+int	NuPlayer::StreamingSource::Wifidisplay_get_TimeInfo(int64_t *start_time,int64_t *audio_start_time)
+{
+
+	if(1 == StreamingSource_Sign)
+	{
+		if(streaming_sys_start_timeUs !=0 && streaming_audio_start_timeUs !=0 )
+		{
+			*start_time 		=	streaming_sys_start_timeUs;
+			*audio_start_time	=	streaming_audio_start_timeUs;
+		}
+	}
+	ALOGV("StreamingSource_Sign %d start_time %lld %lld",StreamingSource_Sign,*start_time,*audio_start_time );
+	return (1 == StreamingSource_Sign) ? 0 : -1;
+}
+
 
 
 }  // namespace android

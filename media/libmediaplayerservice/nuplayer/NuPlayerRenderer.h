@@ -45,6 +45,12 @@ struct NuPlayer::Renderer : public AHandler {
             const sp<ABuffer> &buffer,
             const sp<AMessage> &notifyConsumed);
 
+    void rendervideobuffer(
+           bool audio,
+           const sp<ABuffer> &buffer,
+           const sp<AMessage> &notifyConsumed) ;
+
+
     void queueEOS(bool audio, status_t finalResult);
 
     void flush(bool audio, bool notifyComplete);
@@ -58,6 +64,9 @@ struct NuPlayer::Renderer : public AHandler {
 
     void pause();
     void resume();
+
+    void set_wifidisplay_flag(int flag){wifidisplay_flag = flag;};
+    int Wifidisplay_set_TimeInfo(int64_t start_time,int64_t audio_start_time);
 
     void setVideoFrameRate(float fps);
 
@@ -160,6 +169,15 @@ private:
     bool mHasAudio;
     bool mHasVideo;
     int64_t mPauseStartedTimeRealUs;
+
+	int64_t audio_latency_time;
+	int        wifidisplay_flag;
+	int64_t sys_start_time ;
+	int64_t audio_start_timeUs;
+	int64_t last_adujst_time;
+	int64_t last_timeUs; 
+
+    
 
     Mutex mFlushLock;  // protects the following 2 member vars.
     bool mFlushingAudio;

@@ -180,6 +180,7 @@ status_t AnotherPacketSource::dequeueAccessUnit(sp<ABuffer> *buffer) {
 		mediaBuffer->meta_data()->findInt64(kKeyTime,&timeUs);
 		accessUnit->meta()->setInt64("timeUs", timeUs);
 		*buffer = accessUnit;
+        ALOGV("%s line %d timeUs %lld",__FUNCTION__, __LINE__,timeUs);
 		mMediaBuffers.removeAt(0);
         mediaBuffer->release();
 		quen_num--;

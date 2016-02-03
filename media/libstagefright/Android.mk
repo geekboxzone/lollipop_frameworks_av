@@ -95,6 +95,7 @@ LOCAL_C_INCLUDES:= \
         $(TOP)/external/icu/icu4c/source/common \
         $(TOP)/external/icu/icu4c/source/i18n \
         $(TOP)/hardware/rockchip/librkvpu\
+		$(TOP)/frameworks/av/media/libstagefright/wifi-display
 
 LOCAL_SHARED_LIBRARIES := \
         libbinder \

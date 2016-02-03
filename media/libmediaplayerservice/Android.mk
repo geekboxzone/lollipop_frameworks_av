@@ -8,9 +8,9 @@ include $(CLEAR_VARS)
 
 ifneq ($(filter rk%, $(TARGET_BOARD_PLATFORM)), )
 LOCAL_CFLAGS := -DAVS50
-BUILD_FF_PLAYER := false
+BUILD_FF_PLAYER := true
 else
-BUILD_FF_PLAYER := false
+BUILD_FF_PLAYER := true
 endif
 
 LOCAL_SRC_FILES :=               \
@@ -66,12 +66,15 @@ LOCAL_C_INCLUDES :=                                                 \
 ifeq ($(strip $(BUILD_FF_PLAYER)),true)
 LOCAL_SRC_FILES += \
     FFPlayer.cpp\
+    ApePlayer.cpp
 
 LOCAL_CFLAGS +=	\
     -DUSE_FFPLAYER\
+    -DUSE_APEPLAYER
 
 LOCAL_SHARED_LIBRARIES += \
     librkffplayer\
+    libapedec
 
 LOCAL_C_INCLUDES += \
 	$(TOP)/external/ffmpeg                                          \

@@ -183,10 +183,19 @@ NuPlayer::NuPlayer()
       mStarted(false),
       mPaused(false),
       mPausedByClient(false) {
-    clearFlushComplete();
+      clearFlushComplete();
+      wifidisplay_flag = 0;
+      wifidisplay_info = (int32_t*) malloc(4);
+      memset(wifidisplay_info,0,sizeof(wifidisplay_info));
+      wifidisplay_info[0] = (int) this;
 }
 
 NuPlayer::~NuPlayer() {
+	if (wifidisplay_info != NULL)
+	{
+		free(wifidisplay_info);
+		wifidisplay_info = NULL;
+	}
 }
 
 void NuPlayer::setUID(uid_t uid) {
@@ -729,9 +738,9 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
                 CHECK(msg->findInt32("err", &err));
 
                 if (err == ERROR_END_OF_STREAM) {
-                    ALOGV("got %s decoder EOS", audio ? "audio" : "video");
+                    ALOGE("got %s decoder EOS", audio ? "audio" : "video");
                 } else {
-                    ALOGV("got %s decoder EOS w/ error %d",
+                    ALOGE("got %s decoder EOS w/ error %d",
                          audio ? "audio" : "video",
                          err);
                 }
@@ -836,7 +845,7 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
             int32_t requesterGeneration = mRendererGeneration - 1;
             CHECK(msg->findInt32("generation", &requesterGeneration));
             if (requesterGeneration != mRendererGeneration) {
-                ALOGV("got message from old renderer, generation(%d:%d)",
+                ALOGE("got message from old renderer, generation(%d:%d)",
                         requesterGeneration, mRendererGeneration);
                 return;
             }
@@ -916,7 +925,7 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
 
         case kWhatReset:
         {
-            ALOGV("kWhatReset");
+            ALOGE("kWhatReset");
 
             mDeferredActions.push_back(
                     new FlushDecoderAction(
@@ -937,7 +946,7 @@ void NuPlayer::onMessageReceived(const sp<AMessage> &msg) {
             CHECK(msg->findInt64("seekTimeUs", &seekTimeUs));
             CHECK(msg->findInt32("needNotify", &needNotify));
 
-            ALOGV("kWhatSeek seekTimeUs=%lld us, needNotify=%d",
+            ALOGE("kWhatSeek seekTimeUs=%lld us, needNotify=%d",
                     seekTimeUs, needNotify);
 
             mDeferredActions.push_back(
@@ -1078,6 +1087,10 @@ void NuPlayer::onStart() {
             && meta->findInt32(kKeyFrameRate, &rate) && rate > 0) {
         mRenderer->setVideoFrameRate(rate);
     }
+	
+    if (mSource->getwifidisplay_info(NULL))
+	wifidisplay_flag = 0x1234;
+    mRenderer->set_wifidisplay_flag(wifidisplay_flag!=0);
 
     if (mVideoDecoder != NULL) {
         mVideoDecoder->setRenderer(mRenderer);
@@ -1132,7 +1145,7 @@ void NuPlayer::handleFlushComplete(bool audio, bool isDecoder) {
         {
             *state = SHUTTING_DOWN_DECODER;
 
-            ALOGV("initiating %s decoder shutdown", audio ? "audio" : "video");
+            ALOGE("initiating %s decoder shutdown", audio ? "audio" : "video");
             if (!audio) {
                 // Widevine source reads must stop before releasing the video decoder.
                 if (mSource != NULL && mSourceFlags & Source::FLAG_SECURE) {
@@ -1161,7 +1174,7 @@ void NuPlayer::finishFlushIfPossible() {
         return;
     }
 
-    ALOGV("both audio and video are flushed now.");
+    ALOGE("both audio and video are flushed now.");
 
     mFlushingAudio = NONE;
     mFlushingVideo = NONE;
@@ -1262,6 +1275,11 @@ status_t NuPlayer::instantiateDecoder(bool audio, sp<DecoderBase> *decoder) {
         }
     }
     (*decoder)->init();
+    if (wifidisplay_flag ==0x1234 )
+    {
+	format->setInt32("wifidisplay_flag",1);
+	format->setInt32("wifidisplay_info",wifidisplay_info[0]);
+    }
     (*decoder)->configure(format);
 
     // allocate buffers to decrypt widevine source buffers
@@ -1314,7 +1332,7 @@ void NuPlayer::updateVideoSize(
         displayWidth = cropRight - cropLeft + 1;
         displayHeight = cropBottom - cropTop + 1;
 
-        ALOGV("Video output format changed to %d x %d "
+        ALOGE("Video output format changed to %d x %d "
              "(crop: %d x %d @ (%d, %d))",
              width, height,
              displayWidth,
@@ -1324,18 +1342,18 @@ void NuPlayer::updateVideoSize(
         CHECK(inputFormat->findInt32("width", &displayWidth));
         CHECK(inputFormat->findInt32("height", &displayHeight));
 
-        ALOGV("Video input format %d x %d", displayWidth, displayHeight);
+        ALOGE("Video input format %d x %d", displayWidth, displayHeight);
     }
 
     // Take into account sample aspect ratio if necessary:
     int32_t sarWidth, sarHeight;
     if (inputFormat->findInt32("sar-width", &sarWidth)
             && inputFormat->findInt32("sar-height", &sarHeight)) {
-        ALOGV("Sample aspect ratio %d : %d", sarWidth, sarHeight);
+        ALOGE("Sample aspect ratio %d : %d", sarWidth, sarHeight);
 
         displayWidth = (displayWidth * sarWidth) / sarHeight;
 
-        ALOGV("display dimensions %d x %d", displayWidth, displayHeight);
+        ALOGE("display dimensions %d x %d", displayWidth, displayHeight);
     }
 
     int32_t rotationDegrees;
@@ -1370,7 +1388,7 @@ void NuPlayer::notifyListener(int msg, int ext1, int ext2, const Parcel *in) {
 }
 
 void NuPlayer::flushDecoder(bool audio, bool needShutdown) {
-    ALOGV("[%s] flushDecoder needShutdown=%d",
+    ALOGE("[%s] flushDecoder needShutdown=%d",
           audio ? "audio" : "video", needShutdown);
 
     const sp<DecoderBase> &decoder = getDecoder(audio);
@@ -1518,7 +1536,7 @@ void NuPlayer::processDeferredActions() {
             // We're currently flushing, postpone the reset until that's
             // completed.
 
-            ALOGV("postponing action mFlushingAudio=%d, mFlushingVideo=%d",
+            ALOGE("postponing action mFlushingAudio=%d, mFlushingVideo=%d",
                   mFlushingAudio, mFlushingVideo);
 
             break;
@@ -1532,7 +1550,7 @@ void NuPlayer::processDeferredActions() {
 }
 
 void NuPlayer::performSeek(int64_t seekTimeUs, bool needNotify) {
-    ALOGV("performSeek seekTimeUs=%lld us (%.2f secs), needNotify(%d)",
+    ALOGE("performSeek seekTimeUs=%lld us (%.2f secs), needNotify(%d)",
           seekTimeUs,
           seekTimeUs / 1E6,
           needNotify);
@@ -1552,7 +1570,7 @@ void NuPlayer::performSeek(int64_t seekTimeUs, bool needNotify) {
 }
 
 void NuPlayer::performDecoderFlush(FlushCommand audio, FlushCommand video) {
-    ALOGV("performDecoderFlush audio=%d, video=%d", audio, video);
+    ALOGE("performDecoderFlush audio=%d, video=%d", audio, video);
 
     if ((audio == FLUSH_CMD_NONE || mAudioDecoder == NULL)
             && (video == FLUSH_CMD_NONE || mVideoDecoder == NULL)) {
@@ -1569,7 +1587,7 @@ void NuPlayer::performDecoderFlush(FlushCommand audio, FlushCommand video) {
 }
 
 void NuPlayer::performReset() {
-    ALOGV("performReset");
+    ALOGE("performReset");
 
     CHECK(mAudioDecoder == NULL);
     CHECK(mVideoDecoder == NULL);

@@ -1,0 +1,11 @@
+--- media/libstagefright/wifi-display/sink/WifiDisplaySink.cpp
++++ media/libstagefright/wifi-display/sink/WifiDisplaySink.cpp
+@@ -565,7 +565,7 @@
+                 colonPos, mPlaybackSessionID.size() - colonPos);
+     }
+ 
+-    status_t err = configureTransport(msg);
++    status_t err = 0;//configureTransport(msg);
+ 
+     if (err != OK) {
+         return err;

@@ -41,6 +41,16 @@ struct NuPlayer::StreamingSource : public NuPlayer::Source {
 
     virtual bool isRealTime() const;
 
+    virtual uint32_t flags() const;
+    
+    virtual int getwifidisplay_info(int *info);
+    
+    int Wifidisplay_get_TimeInfo(int64_t *start_time,int64_t *audio_start_time);
+
+
+    virtual bool isWFDStreaming();
+    virtual int64_t getWFDStartSysTimeUs();
+    virtual int64_t getWFDStartMediaTimeUs();
 protected:
     virtual ~StreamingSource();
 
@@ -57,6 +67,11 @@ private:
     sp<NuPlayerStreamListener> mStreamListener;
     sp<ATSParser> mTSParser;
 
+    int	StreamingSource_Sign;
+	int64_t	sys_time_base;
+	int64_t streaming_sys_start_timeUs;
+	int64_t	streaming_audio_start_timeUs;
+
     bool mBuffering;
     Mutex mBufferingLock;
     sp<ALooper> mLooper;
@@ -67,6 +82,9 @@ private:
     status_t postReadBuffer();
     void onReadBuffer();
 
+    bool mWFDFlag;
+    int64_t mWFDStartSysTimeUs;
+    int64_t mWFDStartMediaTimeUs;
     DISALLOW_EVIL_CONSTRUCTORS(StreamingSource);
 };
 

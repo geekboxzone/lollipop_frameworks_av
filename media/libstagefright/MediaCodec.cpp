@@ -1100,7 +1100,10 @@ void MediaCodec::onMessageReceived(const sp<AMessage> &msg) {
                     CHECK(msg->findInt32("flags", &omxFlags));
 
                     buffer->meta()->setInt32("omxFlags", omxFlags);
-
+                    int64_t timeUs;
+                    msg->findInt64("test-timeus",&timeUs);
+                    ALOGD_IF(0, "kWhatDrainThisBuffer timeUS %lld mFlags %d f_Async %d", timeUs, (mFlags & kFlagGatherCodecSpecificData),
+                        (mFlags & kFlagIsAsync));
                     if (mFlags & kFlagGatherCodecSpecificData) {
                         // This is the very first output buffer after a
                         // format change was signalled, it'll either contain
@@ -2183,7 +2186,6 @@ void MediaCodec::postActivityNotificationIfPossible() {
             || !mAvailPortBuffers[kPortIndexOutput].empty()) {
         mActivityNotify->setInt32("input-buffers",
                 mAvailPortBuffers[kPortIndexInput].size());
-
         if (isErrorOrOutputChanged) {
             // we want consumer to dequeue as many times as it can
             mActivityNotify->setInt32("output-buffers", INT32_MAX);

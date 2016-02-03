@@ -1,0 +1,19 @@
+--- media/libstagefright/wifi-display/sink/TunnelRenderer.cpp
++++ media/libstagefright/wifi-display/sink/TunnelRenderer.cpp
+@@ -209,7 +209,6 @@
+ 	            extra->setInt32(
+ 	                    IStreamListener::kKeyDiscontinuityMask,
+ 	                    ATSParser::DISCONTINUITY_ABSOLUTE_TIME);
+-
+ 	            extra->setInt64("wifidisplay_sys_timeUs", tunnelrender_start_time_us);//ALooper::GetNowUs());
+ 	            extra->setInt64("timeUs", tunnelrender_audio_start_time_us);//ALooper::GetNowUs());
+ 				ALOGD("streaming_sys_start_timeUs %lld %lld",tunnelrender_start_time_us,tunnelrender_audio_start_time_us);
+@@ -333,7 +332,7 @@
+ 	                    uint64_t     PTS;
+ 	                    long long timeUs1;
+ 	                    //long long curtime[2];
+-			    int64_t curtime[2];
++			            int64_t curtime[2];
+ 						int  pes_length = 0;
+ 						normal_sign = 1;
+ 	                    buffer->meta()->findInt64("arrivalTimeUs", &curtime[0]);	

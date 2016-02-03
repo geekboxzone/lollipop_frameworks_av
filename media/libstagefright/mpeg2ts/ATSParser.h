@@ -25,6 +25,7 @@
 #include <utils/KeyedVector.h>
 #include <utils/Vector.h>
 #include <utils/RefBase.h>
+#include "../wifi-display/config.h"
 
 namespace android {
 
