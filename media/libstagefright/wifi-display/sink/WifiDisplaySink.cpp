@@ -1046,7 +1046,8 @@ void WifiDisplaySink::onGetParameterRequest(
 
         if (strstr(request_param, "wfd_coupled_sink"))
         	body.append("wfd_coupled_sink: none\r\n");
-                   
+     	if (strstr(request_param, "wfd_connector_type"))
+  		body.append("wfd_connector_type: 05\r\n");  //05:HDMI		
      body.append("wfd_client_rtp_ports: RTP/AVP/UDP;unicast 15550 0 mode=play\r\n");
 #else
     AString body =
