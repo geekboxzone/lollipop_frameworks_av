@@ -1967,7 +1967,10 @@ int Reverb_command(effect_handle_t  self,
                 return -EINVAL;
             }
             effect_param_t *p = (effect_param_t *)pCmdData;
-
+            if (SIZE_MAX - sizeof(effect_param_t) < (size_t)p->psize) {
+                android_errorWriteLog(0x534e4554, "26347509");
+                return -EINVAL;
+            }
             memcpy(pReplyData, pCmdData, sizeof(effect_param_t) + p->psize);
 
             p = (effect_param_t *)pReplyData;
